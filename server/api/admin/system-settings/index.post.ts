@@ -15,6 +15,7 @@ import {
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { CUSTOM_CSS_MAX_LENGTH, containsStyleCloser, trimCustomCss } from '~/utils/custom-css-policy'
 import {
   SERVER_ERROR_CODES,
@@ -1494,6 +1495,14 @@ export default defineEventHandler(async (event) => {
     }
 
     const { rolePermissionTemplates: _rolePermissionTemplates, ...masked } = maskSystemSettingsSecrets(settings)
+    await recordAdminAudit(event, 'settings.update', {
+      targetType: 'settings',
+      targetId: settings.id,
+      summary: {
+        scope: isAdminSettingsScope(scope) ? scope : 'general',
+        fields: Object.keys(updateData)
+      }
+    })
     if (isAdminSettingsScope(scope)) return pickScopeSettings(scope, masked)
     return hasAdminPermission(user, 'system-settings:secrets') ? masked : stripSuperAdminOnlySettingFields(masked)
   } catch (error) {

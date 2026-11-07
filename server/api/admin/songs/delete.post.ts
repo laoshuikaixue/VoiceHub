@@ -2,6 +2,7 @@ import { releaseCardCodeAfterSongWithdrawal } from '~~/server/services/cardCodeL
 import { db } from '~/drizzle/db'
 import { schedules, songs, votes, requestTimes } from '~/drizzle/schema'
 import { eq, sql } from 'drizzle-orm'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -67,7 +68,20 @@ export default defineEventHandler(async (event) => {
         message: '歌曲已成功删除',
         songId: body.songId,
         deletedVotes: true,
-        deletedSchedules: true
+        deletedSchedules: true,
+        song: {
+          title: deletedSongData?.title,
+          artist: deletedSongData?.artist
+        }
+      }
+    })
+
+    await recordAdminAudit(event, 'song.delete', {
+      targetType: 'song',
+      targetId: body.songId,
+      summary: {
+        title: result.song?.title,
+        artist: result.song?.artist
       }
     })
 

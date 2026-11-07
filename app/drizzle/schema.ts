@@ -550,6 +550,29 @@ export const apiLogs = pgTable('api_logs', {
   errorMessage: text('error_message'),
 });
 
+// 管理员操作审计日志表（仅记录后台语义化写操作，控制记录量）
+export const adminAuditLogs = pgTable('admin_audit_logs', {
+  id: serial('id').primaryKey(),
+  // 审计快照：操作者被删除后仍可追溯
+  actorId: integer('actor_id'),
+  actorName: text('actor_name'),
+  // 语义动作码，如 schedule.publish、user.status、settings.update
+  action: varchar('action', { length: 80 }).notNull(),
+  targetType: varchar('target_type', { length: 50 }),
+  targetId: text('target_id'),
+  // 变更摘要（脱敏后 JSON 字符串）
+  summary: text('summary'),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  // SUCCESS / FAILURE
+  result: varchar('result', { length: 10 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index('admin_audit_logs_created_idx').on(table.createdAt),
+  index('admin_audit_logs_actor_idx').on(table.actorId, table.createdAt),
+  index('admin_audit_logs_action_idx').on(table.action, table.createdAt),
+]);
+
 // 用户状态变更日志表
 export const userStatusLogs = pgTable('user_status_logs', {
   id: serial('id').primaryKey(),
@@ -857,6 +880,8 @@ export type ApiLog = typeof apiLogs.$inferSelect;
 export type NewApiLog = typeof apiLogs.$inferInsert;
 export type UserStatusLog = typeof userStatusLogs.$inferSelect;
 export type NewUserStatusLog = typeof userStatusLogs.$inferInsert;
+export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;
+export type NewAdminAuditLog = typeof adminAuditLogs.$inferInsert;
 export type SongCollaborator = typeof songCollaborators.$inferSelect;
 export type NewSongCollaborator = typeof songCollaborators.$inferInsert;
 export type CollaborationLog = typeof collaborationLogs.$inferSelect;

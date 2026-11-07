@@ -213,6 +213,14 @@
               <LazyAdminSystemBoard />
             </div>
 
+            <!-- 日志审计 -->
+            <div
+              v-if="activeTab === 'audit-log' && permissions.canAccessPage('audit-log')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminAuditLogPanel />
+            </div>
+
             <!-- 权限矩阵 -->
             <div
               v-if="activeTab === 'permissions' && permissions.canAccessPage('permissions')"

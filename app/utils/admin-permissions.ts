@@ -88,6 +88,7 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'email-templates:delete',
   'system-board:read',
   'system-board:write',
+  'audit:read',
   // 基础设施
   'api-keys:read',
   'api-keys:write',
@@ -123,7 +124,8 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'page:database',
   'page:system-board',
   'page:permissions',
-  'page:password'
+  'page:password',
+  'page:audit-log'
 ]
 
 const PERMISSION_CODE_SET: ReadonlySet<string> = new Set(ADMIN_PERMISSION_CODES)
@@ -228,6 +230,7 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
     'database:maintenance',
     'music-source:read',
     'music-source:write',
+    'audit:read',
     // 页面入口：站点配置、通知、黑名单、数据库、API 密钥、系统看板不在普通管理员界面
     'page:overview',
     'page:schedule',
@@ -241,7 +244,8 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
     'page:semesters',
     'page:card-codes',
     'page:music-source',
-    'page:password'
+    'page:password',
+    'page:audit-log'
   ],
   SUPER_ADMIN: [PERMISSION_ALL]
 }
@@ -268,7 +272,8 @@ export const ADMIN_PAGE_IDS: readonly string[] = [
   'database',
   'system-board',
   'permissions',
-  'password'
+  'password',
+  'audit-log'
 ]
 
 export const PAGE_PERMISSIONS: Record<string, readonly string[]> = Object.fromEntries(
@@ -321,7 +326,8 @@ export const ADMIN_PAGE_CAPABILITIES: Record<string, readonly string[]> = {
   database: ['database:read', 'backup:read', 'backup:restore'],
   'system-board': ['system-board:read'],
   permissions: [PRIV_ROLE_TEMPLATE],
-  password: []
+  password: [],
+  'audit-log': ['audit:read']
 }
 
 function isPermissionToken(token: unknown): token is string {

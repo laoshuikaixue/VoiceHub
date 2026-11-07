@@ -12,6 +12,7 @@ import {
 } from '~~/server/services/passwordSecurityService'
 import { createApiError } from '~~/server/utils/apiError'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -87,6 +88,12 @@ export default defineEventHandler(async (event) => {
           actorId: user.id,
           ...getPasswordAuditContext(event)
         }
+      })
+
+      await recordAdminAudit(event, 'user.reset-password', {
+        targetType: 'user',
+        targetId: id,
+        summary: { username: user.username }
       })
 
       return {

@@ -137,7 +137,8 @@ import {
   Ticket,
   GraduationCap,
   ShieldCheck,
-  Activity
+  Activity,
+  ScrollText
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
 
@@ -212,6 +213,7 @@ const menuGroups = computed(() => [
       { icon: Globe, label: locale.value.menu?.siteConfig || '站点配置', id: 'site-config' },
       { icon: Database, label: locale.value.menu?.database || '数据库', id: 'database' },
       { icon: Activity, label: locale.value.menu?.systemBoard || '系统看板', id: 'system-board' },
+      { icon: ScrollText, label: locale.value.menu?.auditLog || '日志审计', id: 'audit-log' },
       { icon: ShieldCheck, label: locale.value.menu?.permissions || '权限矩阵', id: 'permissions' }
     ]
   },

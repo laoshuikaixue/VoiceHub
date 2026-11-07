@@ -2228,7 +2228,8 @@ export const admin = {
       database: 'Database',
       systemBoard: 'System Board',
       permissions: 'Permissions',
-      password: 'Change Password'
+      password: 'Change Password',
+      auditLog: 'Audit Log'
     },
     roles: {
       USER: 'User',
@@ -2312,6 +2313,31 @@ export const admin = {
     saved: 'Explicit grants saved',
     loadFailed: 'Failed to load user permissions',
     saveFailed: 'Failed to save explicit grants'
+  },
+  auditLog: {
+    title: 'Audit Log',
+    desc: 'Admin write-operation audit: actor, action, target and result for compliance tracing',
+    refresh: 'Refresh',
+    apply: 'Filter',
+    reset: 'Reset',
+    filterAction: 'Action',
+    filterTargetType: 'Target type',
+    filterResult: 'Result',
+    filterActor: 'Actor',
+    filterStartDate: 'Start date',
+    filterEndDate: 'End date',
+    colTime: 'Time',
+    colAction: 'Action',
+    colActor: 'Actor',
+    colTarget: 'Target',
+    colSummary: 'Summary',
+    colResult: 'Result',
+    colIp: 'IP',
+    success: 'Success',
+    failure: 'Failure',
+    system: 'System',
+    empty: 'No audit records',
+    items: 'records'
   },
   systemBoard: {
     title: 'System Board',

@@ -9,6 +9,7 @@ import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -102,6 +103,12 @@ export default defineEventHandler(async (event) => {
           updatedAt: users.updatedAt
         })
       const newUser = newUserResult[0]
+
+      await recordAdminAudit(event, 'user.create', {
+        targetType: 'user',
+        targetId: newUser.id,
+        summary: { username: newUser.username, role: newUser.role }
+      })
 
       return {
         success: true,

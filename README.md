@@ -757,6 +757,7 @@ VoiceHub/
 │   │   │   └── SocialBindings.vue     # 社交账号绑定
 │   │   ├── Admin/             # 管理员功能组件
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
+│   │   │   ├── AuditLogPanel.vue      # 管理员操作审计面板
 │   │   │   ├── BackupAutoSettings.vue # 自动备份设置
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
@@ -1061,6 +1062,9 @@ VoiceHub/
 │   │   │   │   ├── index.post.ts    # 创建API密钥
 │   │   │   │   ├── logs.get.ts      # API使用日志
 │   │   │   │   └── permissions.ts   # API密钥权限定义
+│   │   │   ├── audit-logs/          # 管理员操作审计API
+│   │   │   │   ├── index.get.ts     # 获取审计日志列表
+│   │   │   │   └── stats.get.ts     # 获取审计日志统计
 │   │   │   ├── backup/              # 备份管理API
 │   │   │   │   ├── delete/          # 删除备份子目录
 │   │   │   │   │   └── [filename].delete.ts
@@ -1456,6 +1460,7 @@ VoiceHub/
 │   │   ├── systemBoardService.ts # 系统看板数据聚合服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
+│   │   ├── admin-audit.ts # 管理员操作审计记录（脱敏摘要、静默失败）
 │   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
 │   │   ├── admin-permission-routes.ts # 后台接口权限守卫表
 │   │   ├── admin-settings-scope.ts # 模块配置权限与字段白名单

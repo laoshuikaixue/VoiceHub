@@ -10,6 +10,7 @@ import {
 import { getStatusText } from '~~/server/utils/user'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -115,6 +116,16 @@ export default defineEventHandler(async (event) => {
         reason: reason.trim(),
         operatorId: user.id,
         createdAt: currentTime
+      })
+
+      await recordAdminAudit(event, 'user.status', {
+        targetType: 'user',
+        targetId: parseInt(userId),
+        summary: {
+          oldStatus,
+          newStatus: status,
+          reason: reason.trim()
+        }
       })
 
       return {

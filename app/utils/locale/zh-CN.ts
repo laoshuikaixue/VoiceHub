@@ -2173,7 +2173,8 @@ export const admin = {
       database: '数据库操作',
       systemBoard: '系统看板',
       permissions: '权限矩阵',
-      password: '修改密码'
+      password: '修改密码',
+      auditLog: '日志审计'
     },
     roles: {
       USER: '普通用户',
@@ -2257,6 +2258,31 @@ export const admin = {
     saved: '用户显式授权已保存',
     loadFailed: '加载用户权限配置失败',
     saveFailed: '保存用户显式授权失败'
+  },
+  auditLog: {
+    title: '日志审计',
+    desc: '管理员后台写操作审计，记录操作者、动作、目标与结果，用于合规追溯',
+    refresh: '刷新',
+    apply: '筛选',
+    reset: '重置',
+    filterAction: '动作',
+    filterTargetType: '目标类型',
+    filterResult: '结果',
+    filterActor: '操作者',
+    filterStartDate: '开始日期',
+    filterEndDate: '结束日期',
+    colTime: '时间',
+    colAction: '动作',
+    colActor: '操作者',
+    colTarget: '目标',
+    colSummary: '摘要',
+    colResult: '结果',
+    colIp: 'IP',
+    success: '成功',
+    failure: '失败',
+    system: '系统',
+    empty: '暂无审计记录',
+    items: '条记录'
   },
   systemBoard: {
     title: '系统看板',

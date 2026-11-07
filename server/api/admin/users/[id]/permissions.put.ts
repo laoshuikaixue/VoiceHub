@@ -10,6 +10,7 @@ import {
 import { resolveRoleTemplate, splitGrantTokens } from '~~/app/utils/admin-permissions'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -26,7 +27,8 @@ export default defineEventHandler(async (event) => {
       )
     }
     const nextTokens = normalizeSubmittedGrants(body.permissions)
-    return await withPermissionTransaction(event, async (tx, templates) => {
+    const auditTarget = { targetId, role: '', permissions: nextTokens }
+    const result = await withPermissionTransaction(event, async (tx, templates) => {
       const { id: operatorId, role: operatorRole, perms: operatorPerms } = event.context.user
       if (targetId === operatorId) {
         throw createApiError(
@@ -49,6 +51,7 @@ export default defineEventHandler(async (event) => {
       if (!target) {
         throw createApiError(404, SERVER_ERROR_CODES.USER_NOT_FOUND, '用户不存在')
       }
+      auditTarget.role = target.role
       if (target.role === 'SUPER_ADMIN' && operatorRole !== 'SUPER_ADMIN') {
         throw createApiError(
           403,
@@ -71,6 +74,16 @@ export default defineEventHandler(async (event) => {
         template: resolveRoleTemplate(target.role, templates)
       }
     })
+    await recordAdminAudit(event, 'permission.user-grant', {
+      targetType: 'user',
+      targetId: auditTarget.targetId,
+      summary: {
+        role: auditTarget.role,
+        followsTemplate: auditTarget.permissions === null,
+        explicit: splitGrantTokens(auditTarget.permissions)
+      }
+    })
+    return result
   } catch (error: any) {
     if (error?.statusCode) throw error
     console.error('[Permissions] 更新用户显式授权失败:', error)

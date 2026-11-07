@@ -18,6 +18,7 @@ import {
 } from '~~/server/utils/permission-admin'
 import { canAssignRole, getRoleTemplateKeys, hasAdminPermission } from '~~/app/utils/admin-permissions'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -266,6 +267,15 @@ export default defineEventHandler(async (event) => {
         `您的账户权限已由系统更新：${oldRoleName} → ${newRoleName}`
       )
     }
+    await recordAdminAudit(event, 'user.update', {
+      targetType: 'user',
+      targetId: result.targetId,
+      summary: {
+        username: result.updatedUser?.username,
+        oldRole: result.oldRole,
+        newRole: result.newRole
+      }
+    })
     return { success: true, user: result.updatedUser, message: '用户更新成功' }
   } catch (error: any) {
     console.error('更新用户失败:', error)
