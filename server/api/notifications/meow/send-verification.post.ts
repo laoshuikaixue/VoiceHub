@@ -1,4 +1,5 @@
 import { createError, defineEventHandler, readBody } from 'h3'
+import { sendMeowNotification } from '~~/server/services/meowNotificationService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -24,29 +25,12 @@ export default defineEventHandler(async (event) => {
     const message = `VoiceHub 账号绑定验证码：${verificationCode}`
     const title = 'VoiceHub 账号绑定'
 
-    // 使用 GET 请求发送验证码
-    const meowUrl = `https://api.chuckfang.com/${encodeURIComponent(nickname)}/${encodeURIComponent(title)}/${encodeURIComponent(message)}`
+    const result = await sendMeowNotification(nickname, title, message)
 
-    const response = await fetch(meowUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': 'VoiceHub/1.0'
-      }
-    })
-
-    if (!response.ok) {
+    if (!result.ok) {
       throw createError({
         statusCode: 500,
-        message: '发送验证码失败，请检查昵称是否正确'
-      })
-    }
-
-    const result = await response.json()
-
-    if (result.status !== 200) {
-      throw createError({
-        statusCode: 500,
-        message: result.message || '发送验证码失败'
+        message: result.msg || '发送验证码失败，请检查昵称是否正确'
       })
     }
 
