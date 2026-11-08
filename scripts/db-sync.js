@@ -245,6 +245,25 @@ async function ensureNoDuplicateUsernames(sql) {
   }
 }
 
+// 上游新增字段的幂等补齐。
+// drizzle 只执行 when 大于库内最新记录的迁移，上游迁移时间戳可能早于库内记录而被跳过，
+// 这里按列定义直接补齐，避免走 push（push 会按 schema 删除库中多出的结构）。
+async function ensureUpstreamColumns(sql) {
+  const additions = [
+    ['User', 'permissions', 'jsonb'],
+    ['SystemSettings', 'customCssEnabled', 'boolean DEFAULT false NOT NULL'],
+    ['SystemSettings', 'customCss', 'text'],
+    ['SystemSettings', 'rolePermissionTemplates', 'jsonb']
+  ]
+
+  for (const [tableName, columnName, definition] of additions) {
+    if (!(await tableExists(sql, tableName))) continue
+    if (await columnExists(sql, tableName, columnName)) continue
+    await sql.unsafe(`ALTER TABLE "${tableName}" ADD COLUMN IF NOT EXISTS "${columnName}" ${definition}`)
+    warn(`已补齐缺失字段 ${tableName}.${columnName}`)
+  }
+}
+
 // 检查数据库schema是否包含当前代码依赖的关键对象。
 async function checkSchemaConsistency(sql) {
   const requiredEnums = [
@@ -481,6 +500,8 @@ async function main() {
     } else {
       // 重复 username 会阻塞唯一索引创建（push/migrate 均失败），先修复数据再同步
       await ensureNoDuplicateUsernames(sql)
+      // 迁移可能因时间戳早于库内记录被跳过，先补齐上游新增字段再迁移
+      await ensureUpstreamColumns(sql)
       const migrationRecordsExist = await hasMigrationRecords(sql)
       if (migrationRecordsExist) {
         // 正常数据库必须先应用待执行迁移，再检查最终结构；否则新增字段会被误判为schema损坏。
