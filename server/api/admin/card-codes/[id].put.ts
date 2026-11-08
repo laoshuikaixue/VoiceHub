@@ -7,6 +7,7 @@ import {
   syncAssignmentOnManualStatusChange, assertCardCodesUnbound
 } from '~~/server/services/cardCodeAssignmentService'
 import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -112,6 +113,13 @@ export default defineEventHandler(async (event) => {
       }
 
       return newRow
+    })
+
+    // 券码等同凭据，审计只记状态与是否改备注，不记码值
+    await recordAdminAudit(event, 'card-code.update', {
+      targetType: 'card-code',
+      targetId: id,
+      summary: { status, noteUpdated: note !== undefined }
     })
 
     return { success: true, data: updated }

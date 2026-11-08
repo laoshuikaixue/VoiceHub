@@ -2,6 +2,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
+import { ADMIN_AUDIT_RESULT, recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -37,11 +38,22 @@ export default defineEventHandler(async (event) => {
         text: '如果您收到此邮件，说明 VoiceHub 的邮件服务配置正确。'
       })
 
+      // 真实投递了邮件，收件人写入审计供取证
+      await recordAdminAudit(event, 'backup.test-email', {
+        targetType: 'smtp',
+        summary: { recipient }
+      })
+
       return { success: true, message: '测试邮件发送成功' }
     } finally {
       transporter.close()
     }
   } catch (err: any) {
+    await recordAdminAudit(event, 'backup.test-email', {
+      targetType: 'smtp',
+      summary: { recipient, error: err.message || '邮件发送失败' },
+      result: ADMIN_AUDIT_RESULT.FAILURE
+    })
     return { success: false, message: err.message || '邮件发送失败' }
   }
 })

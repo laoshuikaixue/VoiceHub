@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { emailTemplates } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   if (getMethod(event) !== 'POST') {
@@ -23,12 +24,24 @@ export default defineEventHandler(async (event) => {
       .set({ name, subject, html, updatedAt: new Date(), updatedByUserId: user.id })
       .where(eq(emailTemplates.key, key))
       .returning()
+    await recordAdminAudit(event, 'email-template.update', {
+      targetType: 'email-template',
+      targetId: key,
+      summary: { key, name, subject, htmlLength: html.length }
+    })
+
     return { success: true, template: res[0] }
   } else {
     const res = await db
       .insert(emailTemplates)
       .values({ key, name, subject, html, updatedByUserId: user.id })
       .returning()
+    await recordAdminAudit(event, 'email-template.create', {
+      targetType: 'email-template',
+      targetId: key,
+      summary: { key, name, subject, htmlLength: html.length }
+    })
+
     return { success: true, template: res[0] }
   }
 })

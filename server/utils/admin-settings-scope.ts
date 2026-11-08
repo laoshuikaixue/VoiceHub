@@ -1,4 +1,4 @@
-import { hasAdminPermission } from '../../app/utils/admin-permissions.ts'
+import { PRIV_LOGS, hasAdminPermission } from '../../app/utils/admin-permissions.ts'
 
 // 各模块配置的读写边界；未列出的字段不得通过模块接口读取或写入。
 export const ADMIN_SETTINGS_SCOPES = {
@@ -21,6 +21,11 @@ export const ADMIN_SETTINGS_SCOPES = {
   'music-source': {
     read: ['music-source:read', 'system-settings:read'], write: ['music-source:write', 'system-settings:write'],
     fields: ['enabledPlatforms', 'platformOrder']
+  },
+  // 日志管理：API 访问日志级别与数据库日志保留天数，仅超级管理员
+  logging: {
+    read: [PRIV_LOGS], write: [PRIV_LOGS],
+    fields: ['apiLogLevel', 'apiLogRetentionDays', 'auditLogRetentionDays']
   }
 } as const
 

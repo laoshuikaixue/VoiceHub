@@ -9,6 +9,7 @@ import {
   withPermissionTransaction
 } from '~~/server/utils/permission-admin'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
@@ -245,6 +246,22 @@ export default defineEventHandler(async (event) => {
         reason: error.message || '数据库批量写入失败'
       })
     }
+  }
+
+  if (results.created > 0) {
+    await recordAdminAudit(event, 'user.batch-create', {
+      targetType: 'user',
+      summary: {
+        created: results.created,
+        failed: results.failed,
+        // 前端按 50 条分批提交，带上批次标识才能把同一次导入的多条记录归组
+        importBatchId: typeof body.importBatchId === 'string' ? body.importBatchId : null,
+        batchIndex: Number.isInteger(body.batchIndex) ? body.batchIndex : null,
+        batchTotal: Number.isInteger(body.batchTotal) ? body.batchTotal : null,
+        // 摘要数组由审计层截到 20 项，此处同步避免给出错误的完整名单预期
+        usernames: usersToInsertData.map((item) => item.username).slice(0, 20)
+      }
+    })
   }
 
   return results

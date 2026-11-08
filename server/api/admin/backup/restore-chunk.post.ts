@@ -4,6 +4,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
 import {
+  adminAuditLogs,
   apiKeyPermissions,
   apiKeys,
   apiLogs,
@@ -40,6 +41,7 @@ import { normalizeScheduleVisibilitySettings } from '~~/server/utils/system-sett
 import { getServerDate } from '~~/server/utils/serverTime'
 import { restoreCardCodeAssignmentRecord, syncRestoredCardCodeAssignment } from '~~/server/utils/card-code-backup'
 import { syncAllSequences } from '~~/server/utils/sequence-sync'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -50,6 +52,7 @@ export default defineEventHandler(async (event) => {
     tableName,
     records,
     mappings,
+    restoreBatchId,
     mode = 'merge',
     overwriteSuperAdmin = false,
     hasSuperAdminInBackup = false
@@ -983,7 +986,10 @@ export default defineEventHandler(async (event) => {
               'legalConsentDocuments',
               'enabledPlatforms',
               'platformOrder',
-              'rolePermissionTemplates'
+              'rolePermissionTemplates',
+              'apiLogLevel',
+              'apiLogRetentionDays',
+              'auditLogRetentionDays'
             ]
             fields.forEach((field) => {
               if (record.hasOwnProperty(field)) {
@@ -1908,6 +1914,53 @@ export default defineEventHandler(async (event) => {
             }
             break
           }
+
+          case 'adminAuditLogs': {
+            const auditAction =
+              typeof record.action === 'string' ? record.action.slice(0, 80) : ''
+            if (!auditAction) {
+              stats.warnings.push(`审计日志 ${record.id ?? ''} 缺少动作码，已跳过`)
+              break
+            }
+
+            const auditLogData: any = {
+              actorId: Number.isInteger(record.actorId) ? record.actorId : null,
+              actorName: record.actorName || null,
+              action: auditAction,
+              targetType: record.targetType ? String(record.targetType).slice(0, 50) : null,
+              targetId:
+                record.targetId !== null && record.targetId !== undefined
+                  ? String(record.targetId).slice(0, 200)
+                  : null,
+              summary: record.summary || null,
+              ipAddress: record.ipAddress || null,
+              userAgent: record.userAgent || null,
+              result: record.result === 'FAILURE' ? 'FAILURE' : 'SUCCESS',
+              createdAt: record.createdAt ? new Date(record.createdAt) : getServerDate()
+            }
+
+            if (mode === 'merge') {
+              await tx.insert(adminAuditLogs).values(auditLogData)
+              stats.created++
+            } else if (record.id) {
+              const existingAuditLog = await tx
+                .select({ id: adminAuditLogs.id })
+                .from(adminAuditLogs)
+                .where(eq(adminAuditLogs.id, record.id))
+                .limit(1)
+              if (existingAuditLog.length > 0) {
+                await tx.update(adminAuditLogs).set(auditLogData).where(eq(adminAuditLogs.id, record.id))
+                stats.updated++
+              } else {
+                await tx.insert(adminAuditLogs).values({ ...auditLogData, id: record.id })
+                stats.created++
+              }
+            } else {
+              await tx.insert(adminAuditLogs).values(auditLogData)
+              stats.created++
+            }
+            break
+          }
         }
       })
       stats.processed++
@@ -1948,6 +2001,21 @@ export default defineEventHandler(async (event) => {
     stats.warnings.push(`自增序列同步失败: ${seqErrorMsg}`)
     console.error('自增序列同步失败:', seqError)
   }
+
+  await recordAdminAudit(event, 'backup.restore-chunk', {
+    targetType: 'backup',
+    targetId: `chunk:${tableName}`,
+    summary: {
+      restoreBatchId,
+      mode,
+      overwriteSuperAdmin: shouldOverwriteSuperAdmin,
+      processed: stats.processed,
+      created: stats.created,
+      updated: stats.updated,
+      errors: stats.errors,
+      warningCount: stats.warnings.length
+    }
+  })
 
   return {
     success: true,

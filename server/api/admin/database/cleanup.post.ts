@@ -1,10 +1,17 @@
 import { databaseManager } from '~~/server/utils/database-manager'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
   try {
     const cleanedCount = await databaseManager.cleanupExpiredSessions()
 
     databaseManager.clearHealthCheckCache()
+
+    await recordAdminAudit(event, 'database.cleanup', {
+      targetType: 'session',
+      targetId: `batch:${cleanedCount}`,
+      summary: { cleanedCount }
+    })
 
     return {
       success: true,

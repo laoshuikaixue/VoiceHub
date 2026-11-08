@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { semesters, songs } from '~/drizzle/schema'
 import { eq, and, ne } from 'drizzle-orm'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const semesterId = parseInt(event.context.params?.id || '0')
@@ -70,6 +71,12 @@ export default defineEventHandler(async (event) => {
     }
 
     return updateResult[0]
+  })
+
+  await recordAdminAudit(event, 'semester.rename', {
+    targetType: 'semester',
+    targetId: semesterId,
+    summary: { from: oldName, to: nextName }
   })
 
   return result

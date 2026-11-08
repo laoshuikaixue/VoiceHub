@@ -20,6 +20,7 @@ import {
 import { assertSchedulePlacement, loadSongTitleMap } from '~~/server/utils/schedulePlacementConstraint'
 import { getServerDate } from '~~/server/utils/serverTime'
 
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 export default defineEventHandler(async (event) => {
   const user = event.context.user
 
@@ -288,6 +289,12 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log(`[Performance] 批量发布排期耗时: ${Date.now() - startTime}ms`)
+
+    await recordAdminAudit(event, 'schedule.bulk-publish', {
+      targetType: 'schedule',
+      targetId: `batch:${body.songs.length}`,
+      summary: { count: body.songs.length, playDate }
+    })
 
     return {
       success: true,

@@ -17,6 +17,7 @@ import { users } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { getAdminPasswordViolation } from '~~/server/utils/admin-password-policy'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -140,6 +141,14 @@ export default defineEventHandler(async (event) => {
     if (result.grantedSuperAdmin) {
       await recordSuperAdminRoleChange(event, user, result.user, true)
     }
+
+    // 审计写入同样放在事务提交之后，避免回滚后留下成功记录
+    const createdUser = result.user
+    await recordAdminAudit(event, 'user.create', {
+      targetType: 'user',
+      targetId: createdUser.id,
+      summary: { username: createdUser.username, role: createdUser.role }
+    })
 
     return { success: true, user: result.user, message: '用户创建成功' }
   } catch (error: any) {

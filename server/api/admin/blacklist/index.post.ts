@@ -7,6 +7,7 @@ import {
   BLACKLIST_LANGUAGE_VALUES,
   BLACKLIST_GENRE_VALUES
 } from '~~/server/config/constants'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -69,6 +70,12 @@ export default defineEventHandler(async (event) => {
         isActive: true
       })
       .returning()
+
+    await recordAdminAudit(event, 'blacklist.create', {
+      targetType: 'blacklist',
+      targetId: blacklistItem[0]?.id,
+      summary: { type, value: value.trim(), reason: reason?.trim() }
+    })
 
     return {
       success: true,

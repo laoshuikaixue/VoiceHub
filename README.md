@@ -766,6 +766,9 @@ VoiceHub/
 │   │   │   └── SocialBindings.vue     # 社交账号绑定
 │   │   ├── Admin/             # 管理员功能组件
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
+│   │   │   ├── AuditLogPanel.vue      # 管理员操作审计面板
+│   │   │   ├── LogManagement.vue      # 日志管理（级别/保留天数/查询导出清理）
+│   │   │   ├── LogTable.vue           # 日志表格容器（表头/加载态/空状态）
 │   │   │   ├── BackupAutoSettings.vue # 自动备份设置
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
@@ -1072,6 +1075,10 @@ VoiceHub/
 │   │   │   │   ├── index.post.ts    # 创建API密钥
 │   │   │   │   ├── logs.get.ts      # API使用日志
 │   │   │   │   └── permissions.ts   # API密钥权限定义
+│   │   │   ├── audit-logs/          # 管理员操作审计API
+│   │   │   │   ├── export.get.ts    # 导出审计日志（CSV/JSONL）
+│   │   │   │   ├── index.get.ts     # 获取审计日志列表
+│   │   │   │   └── stats.get.ts     # 获取审计日志统计
 │   │   │   ├── backup/              # 备份管理API
 │   │   │   │   ├── delete/          # 删除备份子目录
 │   │   │   │   │   └── [filename].delete.ts
@@ -1106,6 +1113,12 @@ VoiceHub/
 │   │   │   │   ├── initialize.post.ts # 从现有用户提取初始化
 │   │   │   │   ├── index.get.ts     # 获取配置列表
 │   │   │   │   └── index.post.ts    # 新增配置项
+│   │   │   ├── log-management/      # 日志管理API
+│   │   │   │   ├── access/          # API 访问日志子目录
+│   │   │   │   │   └── export.get.ts # 导出访问日志（CSV/JSONL）
+│   │   │   │   ├── access.get.ts    # 获取 API 访问日志列表
+│   │   │   │   ├── cleanup.post.ts  # 按保留天数清理过期日志
+│   │   │   │   └── stats.get.ts     # 获取日志统计
 │   │   │   ├── card-codes/          # 点歌券管理API
 │   │   │   │   ├── [id].put.ts      # 更新单张点歌券
 │   │   │   │   ├── assignments.get.ts # 派发记录查询
@@ -1448,6 +1461,7 @@ VoiceHub/
 │   │   ├── error-handler.ts # 错误处理插件
 │   │   ├── redis-lifecycle.ts # Redis短期状态连接生命周期
 │   │   ├── custom-css.ts   # 自定义 CSS 注入插件
+│   │   ├── log-retention.ts # 数据库日志定期清理
 │   │   └── statistics-code.ts # 站点统计代码注入插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
@@ -1468,6 +1482,7 @@ VoiceHub/
 │   │   ├── systemBoardService.ts # 系统看板数据聚合服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
+│   │   ├── admin-audit.ts # 管理员操作审计记录（脱敏摘要、静默失败）
 │   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
 │   │   ├── admin-permission-routes.ts # 后台接口权限守卫表
 │   │   ├── admin-settings-scope.ts # 模块配置权限与字段白名单
@@ -1509,7 +1524,11 @@ VoiceHub/
 │   │   ├── permission-admin.ts # 权限矩阵数据层
 │   │   ├── permission-policy.ts # 权限模板/显式授权校验与安全阀纯策略
 │   │   ├── jwt-enhanced.ts # JWT工具
+│   │   ├── log-export.ts   # 日志导出（CSV 转义防公式注入 / JSONL）
 │   │   ├── log-manager.ts  # 日志管理工具
+│   │   ├── log-query.ts    # 日志列表与导出的共用筛选条件（北京日界）
+│   │   ├── log-retention.ts # 数据库日志保留策略与清理
+│   │   ├── log-settings.ts # 日志级别与保留天数规范化
 │   │   ├── music-source-plugins/ # LX Music 与 MusicFree 音源插件运行时、沙箱与凭证管理
 │   │   │   ├── access.ts    # 后台权限、同源校验与调用限流
 │   │   │   ├── backup.ts    # 插件表备份清单与恢复写入

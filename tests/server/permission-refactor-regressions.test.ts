@@ -248,7 +248,8 @@ const baseDeps = {
   createApiError: apiError,
   createError: h3Error,
   SERVER_ERROR_CODES,
-  ...permissions
+  ...permissions,
+  recordAdminAudit: async () => {}
 }
 
 test('通配授权不能恢复操作者被显式拒绝的能力', () => {

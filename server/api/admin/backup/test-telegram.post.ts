@@ -2,6 +2,7 @@ import { defineEventHandler, readBody } from 'h3'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getAutoBackupConfig } from '~~/server/services/autoBackupService'
+import { ADMIN_AUDIT_RESULT, recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -34,8 +35,20 @@ export default defineEventHandler(async (event) => {
       throw new Error(result.description || 'Telegram API 返回错误')
     }
 
+    await recordAdminAudit(event, 'backup.test-telegram', {
+      targetType: 'backup',
+      summary: { chatId }
+    })
+
     return { success: true, message: 'Telegram Bot 连接测试成功' }
   } catch (err: any) {
+    // botToken 出现在请求 URL 中，摘要与错误信息一律剔除它
+    const safeError = (err?.message || '').split(botToken).join('[已脱敏]')
+    await recordAdminAudit(event, 'backup.test-telegram', {
+      targetType: 'backup',
+      summary: { chatId, error: safeError || 'Telegram Bot 连接测试失败' },
+      result: ADMIN_AUDIT_RESULT.FAILURE
+    })
     return { success: false, message: err.message || 'Telegram Bot 连接测试失败' }
   }
 })

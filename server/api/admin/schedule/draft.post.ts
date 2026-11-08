@@ -3,6 +3,7 @@ import { playTimes, schedules, songs, songReplayRequests } from '~/drizzle/schem
 import { and, desc, eq, gte, lte } from 'drizzle-orm'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 // 输入验证函数
 function validateInput(body: any) {
@@ -166,6 +167,16 @@ export default defineEventHandler(async (event) => {
           requesterId: song.requesterId,
           cardCodeId: song.cardCodeId
         }
+      }
+    })
+
+    await recordAdminAudit(event, 'schedule.draft', {
+      targetType: 'schedule',
+      targetId: result.schedule.id,
+      summary: {
+        songId: body.songId,
+        title: result.song.title,
+        playDate: result.schedule.playDate
       }
     })
 

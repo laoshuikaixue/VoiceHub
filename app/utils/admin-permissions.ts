@@ -15,6 +15,14 @@ export const PRIV_ADMIN_CONSOLE = 'priv:admin-console'
 export const PRIV_ROLE_TEMPLATE = 'priv:role-template'
 // 站点级：按用户显式授权/拒权
 export const PRIV_GRANT = 'priv:grant'
+// 站点级：管理员审计与日志管理，仅供超级管理员。不进入权限目录，无法被显式授出
+export const PRIV_AUDIT = 'priv:audit'
+export const PRIV_LOGS = 'priv:logs'
+
+// 私有码只在持有全站通配 `*`（即超级管理员模板）时生效；
+// `priv:*` 等域通配不得覆盖，避免把审计能力随通配授权扩散出去。
+export const PRIVATE_PERMISSION_CODES: readonly string[] = [PRIV_AUDIT, PRIV_LOGS]
+const PRIVATE_PERMISSION_CODE_SET: ReadonlySet<string> = new Set(PRIVATE_PERMISSION_CODES)
 
 // 安全阀保护的站点级能力：移出其最后一个持有者会把站点锁死在无人可再授权的状态
 export const PROTECTED_PRIV_CODES: readonly string[] = [
@@ -274,7 +282,9 @@ export const ADMIN_PAGE_IDS: readonly string[] = [
   'database',
   'system-board',
   'permissions',
-  'password'
+  'password',
+  'audit-log',
+  'logs'
 ]
 
 export const PAGE_PERMISSIONS: Record<string, readonly string[]> = Object.fromEntries(
@@ -327,7 +337,9 @@ export const ADMIN_PAGE_CAPABILITIES: Record<string, readonly string[]> = {
   database: ['database:read', 'backup:read', 'backup:restore'],
   'system-board': ['system-board:read'],
   permissions: [PRIV_ROLE_TEMPLATE],
-  password: []
+  password: [],
+  'audit-log': [PRIV_AUDIT],
+  logs: [PRIV_LOGS]
 }
 
 function isPermissionToken(token: unknown): token is string {
@@ -527,6 +539,7 @@ export function isPermissionDenied(perms: readonly string[], code: string): bool
 export function hasPermission(perms: readonly string[], code: string): boolean {
   if (!Array.isArray(perms) || !code) return false
   if (isPermissionDenied(perms, code)) return false
+  if (PRIVATE_PERMISSION_CODE_SET.has(code)) return perms.includes(PERMISSION_ALL)
   const dependencies = PERMISSION_READ_DEPENDENCIES[code]
   return perms.some((token) => !token.startsWith('!') && matchesToken(token, code)) ||
     (Array.isArray(dependencies) && dependencies.some((action) => hasPermission(perms, action)))

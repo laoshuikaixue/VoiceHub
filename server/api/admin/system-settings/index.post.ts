@@ -1,4 +1,4 @@
-import { hasAdminPermission } from '~~/app/utils/admin-permissions'
+import { hasAdminPermission, PRIV_LOGS } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -15,13 +15,18 @@ import {
   normalizeAggregateOAuthLoginTypes
 } from '~~/server/utils/oauth-providers'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { CUSTOM_CSS_MAX_LENGTH, containsStyleCloser, trimCustomCss } from '~/utils/custom-css-policy'
 import {
   SERVER_ERROR_CODES,
   MUSIC_SOURCE_PLATFORMS,
   DEFAULT_THEMES,
   CAPTCHA_PROVIDERS,
-  ALIYUN_ESA_CAPTCHA_REGIONS
+  ALIYUN_ESA_CAPTCHA_REGIONS,
+  API_LOG_LEVELS,
+  LOG_RETENTION_MAX_DAYS,
+  MIN_API_LOG_RETENTION_DAYS,
+  MIN_AUDIT_LOG_RETENTION_DAYS
 } from '~~/server/config/constants'
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
@@ -205,6 +210,13 @@ export default defineEventHandler(async (event) => {
     // 获取当前设置，用于验证依赖配置的完整性
     const settingsResult = await db.select().from(systemSettings).limit(1)
     let settings = settingsResult[0]
+
+    // 日志配置变更前原值：这三个字段非凭据，可在审计里记录前后值以便取证
+    const previousLogSettings = {
+      apiLogLevel: settings?.apiLogLevel,
+      apiLogRetentionDays: settings?.apiLogRetentionDays,
+      auditLogRetentionDays: settings?.auditLogRetentionDays
+    }
 
     if (body.defaultTheme !== undefined || body.enabledThemes !== undefined) {
       // 普通管理员提交主题字段已由上方守卫拦截，此处仅处理超级管理员请求
@@ -1447,6 +1459,45 @@ export default defineEventHandler(async (event) => {
       updateData.enableSubmissionRestriction = true
     }
 
+    // 日志管理：记录级别与保留天数（0 = 永久保留）
+    // 未走 logging 模块接口时同样要求私有码，避免用通用配置权限绕过
+    if (!isAdminSettingsScope(scope)) {
+      const logFields = ['apiLogLevel', 'apiLogRetentionDays', 'auditLogRetentionDays']
+      if (logFields.some((field) => body[field] !== undefined) && !hasAdminPermission(user, PRIV_LOGS)) {
+        throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '没有修改日志配置的权限')
+      }
+    }
+    if (body.apiLogLevel !== undefined) {
+      if (!(API_LOG_LEVELS as readonly unknown[]).includes(body.apiLogLevel)) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_LOG_LEVEL_INVALID,
+          `apiLogLevel 必须是 ${API_LOG_LEVELS.join('、')}`
+        )
+      }
+      updateData.apiLogLevel = body.apiLogLevel
+    }
+    // 保留天数：0 = 永久保留，否则不得低于该类型的下限，防止压到极小后清掉近期日志
+    const retentionMins = {
+      apiLogRetentionDays: MIN_API_LOG_RETENTION_DAYS,
+      auditLogRetentionDays: MIN_AUDIT_LOG_RETENTION_DAYS
+    } as const
+    for (const field of ['apiLogRetentionDays', 'auditLogRetentionDays'] as const) {
+      if (body[field] === undefined) continue
+      const days = body[field]
+      const minDays = retentionMins[field]
+      const valid = Number.isInteger(days) && (days === 0 || (days >= minDays && days <= LOG_RETENTION_MAX_DAYS))
+      if (!valid) {
+        throw createApiError(
+          400,
+          SERVER_ERROR_CODES.SETTINGS_LOG_RETENTION_INVALID,
+          `${field} 必须是 0 或 ${minDays}-${LOG_RETENTION_MAX_DAYS} 的整数`,
+          { params: [minDays, LOG_RETENTION_MAX_DAYS] }
+        )
+      }
+      updateData[field] = days
+    }
+
     if (isAdminSettingsScope(scope)) {
       updateData = pickScopeSettings(scope, updateData)
     }
@@ -1494,6 +1545,27 @@ export default defineEventHandler(async (event) => {
     }
 
     const { rolePermissionTemplates: _rolePermissionTemplates, ...masked } = maskSystemSettingsSecrets(settings)
+    const logSettingFields = ['apiLogLevel', 'apiLogRetentionDays', 'auditLogRetentionDays'] as const
+    const logSettingsChanged = logSettingFields.filter((field) => field in updateData)
+    await recordAdminAudit(event, 'settings.update', {
+      targetType: 'settings',
+      targetId: settings.id,
+      summary: {
+        scope: isAdminSettingsScope(scope) ? scope : 'general',
+        fields: Object.keys(updateData),
+        // 仅日志配置记录前后值：用于证明保留期是否被人为压低
+        ...(logSettingsChanged.length
+          ? {
+              changes: Object.fromEntries(
+                logSettingsChanged.map((field) => [field, {
+                  from: previousLogSettings[field],
+                  to: updateData[field]
+                }])
+              )
+            }
+          : {})
+      }
+    })
     if (isAdminSettingsScope(scope)) return pickScopeSettings(scope, masked)
     return hasAdminPermission(user, 'system-settings:secrets') ? masked : stripSuperAdminOnlySettingFields(masked)
   } catch (error) {

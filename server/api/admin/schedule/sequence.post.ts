@@ -1,6 +1,7 @@
 import { db, eq } from '~/drizzle/db'
 import { schedules } from '~/drizzle/schema'
 
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
@@ -39,6 +40,12 @@ export default defineEventHandler(async (event) => {
       }
 
       return updatedRows
+    })
+
+    await recordAdminAudit(event, 'schedule.reorder', {
+      targetType: 'schedule',
+      targetId: `batch:${results.length}`,
+      summary: { count: results.length }
     })
 
     return {
