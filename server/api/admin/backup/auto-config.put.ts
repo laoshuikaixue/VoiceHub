@@ -9,6 +9,7 @@ import { SYSTEM_SETTINGS_DEFAULTS } from '~~/server/utils/system-settings-defaul
 import { assertSafeOutboundUrl } from '~~/server/utils/outbound-url'
 import { buildRepoFilePath, parseGitRepo } from '~~/server/utils/githubGitClient'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 /** 备份配置结构校验 */
 const backupConfigSchema = z.object({
@@ -135,6 +136,17 @@ export default defineEventHandler(async (event) => {
       })
       .where(eq(systemSettings.id, existing.id))
   }
+
+  // 备份目标含密钥与地址，审计只记录启用的备份方式
+  await recordAdminAudit(event, 'backup.auto-config', {
+    targetType: 'system-settings',
+    summary: {
+      enabled,
+      methodsEnabled: Object.entries<any>(finalConfig?.methods ?? {})
+        .filter(([, value]) => value?.enabled)
+        .map(([key]) => key)
+    }
+  })
 
   return { success: true, message: '自动备份配置已保存' }
 })

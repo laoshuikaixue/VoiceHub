@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { stripTypeScriptTypes } from 'node:module'
 import { createError } from 'h3'
 import test from 'node:test'
@@ -282,6 +282,7 @@ test('SMTP 测试接口仅使用隔离实例，关闭测试传输器且不改写
       readBody: async () => ({ testEmail: 'test@example.com', smtpHost: 'attacker.example', smtpPassword: SMTP_PASSWORD_MASK }),
       getSystemSettingsCached: async () => stored,
       getClientIP: () => '127.0.0.1', hasAdminPermission: permissions.hasAdminPermission, resolveSmtpTestConfig,
+      recordAdminAudit: async () => {}, ADMIN_AUDIT_RESULT: { SUCCESS: 'SUCCESS', FAILURE: 'FAILURE' },
       SmtpService: {
         getInstance: () => { throw new Error('测试不得使用全局邮件实例') },
         createTestInstance: (config: any) => {
@@ -297,4 +298,26 @@ test('SMTP 测试接口仅使用隔离实例，关闭测试传输器且不改写
     assert.equal((await route({ context: { user: { perms: role('smtp:test') } } })).success, true)
   }
   assert.deepEqual(calls, ['close', 'close'])
+})
+
+// 无数据变更、无外部副作用的后台接口不写审计，豁免清单须写明原因
+const AUDIT_EXEMPT_ROUTES: Record<string, string> = {
+  'email-templates/preview.post.ts': '仅渲染邮件模板预览，不写库也不投递',
+  'smtp/reload.post.ts': '仅重载进程内 SMTP 实例，无数据变更',
+  'songs/cover.post.ts': '仅查询封面地址，无数据变更'
+}
+
+test('后台写接口要么记录审计，要么在豁免清单中说明原因', () => {
+  const files = readdirSync(new URL('../../server/api/admin', import.meta.url), { recursive: true })
+    .filter((entry): entry is string => typeof entry === 'string' && /\.(?:post|put|patch|delete)\.ts$/.test(entry))
+    .map((entry) => entry.replace(/\\/g, '/'))
+    .sort()
+
+  // 扫描结果为空说明路径或匹配规则失效，此时断言会假通过
+  assert.ok(files.length >= 60, `后台写接口数量异常: ${files.length}`)
+
+  const unaudited = files.filter((file) =>
+    !readFileSync(new URL(`../../server/api/admin/${file}`, import.meta.url), 'utf8').includes('recordAdminAudit')
+  )
+  assert.deepEqual(unaudited, Object.keys(AUDIT_EXEMPT_ROUTES).sort())
 })

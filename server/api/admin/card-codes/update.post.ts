@@ -4,6 +4,7 @@ import { cardCodes, cardCodeRedeemLogs } from '~/drizzle/schema'
 import { inArray, eq } from 'drizzle-orm'
 import { syncAssignmentOnManualStatusChange, assertCardCodesUnbound } from '~~/server/services/cardCodeAssignmentService'
 import { CARD_CODE_STATUSES } from '../../../card-codes/statuses'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -122,6 +123,17 @@ export default defineEventHandler(async (event) => {
       }
 
       return updatedRows
+    })
+
+    await recordAdminAudit(event, 'card-code.batch-update', {
+      targetType: 'card-code',
+      targetId: `batch:${res.length}`,
+      summary: {
+        status,
+        requested: normalizedIds.length,
+        updated: res.length,
+        noteUpdated: typeof body.note !== 'undefined'
+      }
     })
 
     return { success: true, data: res }

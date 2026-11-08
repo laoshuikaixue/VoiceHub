@@ -13,6 +13,7 @@ import {
   serializeNotificationSender
 } from '~~/server/utils/important-notification-policy'
 import { resolveNotificationBatchReference } from '~~/server/utils/notification-history-policy'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -116,6 +117,12 @@ export default defineEventHandler(async (event) => {
         throw createApiError(404, SERVER_ERROR_CODES.NOTIFICATION_NOT_FOUND, '通知不存在')
       }
 
+      await recordAdminAudit(event, 'notification.resend', {
+        targetType: 'notification',
+        targetId: batchReference.batchId ?? batchReference.notificationId,
+        summary: { title, content, recipientCount: recipientUserIds.length, newBatchId: batchId }
+      })
+
       return {
         success: true,
         createdNewBatch: true,
@@ -160,6 +167,12 @@ export default defineEventHandler(async (event) => {
   if (updatedRows.length === 0) {
     throw createApiError(404, SERVER_ERROR_CODES.NOTIFICATION_NOT_FOUND, '通知不存在')
   }
+
+  await recordAdminAudit(event, 'notification.update', {
+    targetType: 'notification',
+    targetId: batchReference.batchId ?? batchReference.notificationId,
+    summary: { title, content, updatedCount: updatedRows.length }
+  })
 
   return {
     success: true,

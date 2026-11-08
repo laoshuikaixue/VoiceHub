@@ -3,6 +3,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { resolveBackupTestParams } from '~~/server/utils/backup-test-credentials'
 import { assertSafeOutboundUrl, fetchSafeOutbound } from '~~/server/utils/outbound-url'
+import { ADMIN_AUDIT_RESULT, recordAdminAudit } from '~~/server/utils/admin-audit'
 
 /** 规范化路径，去除首尾空格和多余斜杠 */
 function normalizePath(p: string): string {
@@ -64,8 +65,19 @@ export default defineEventHandler(async (event) => {
       headers: { Authorization: `Basic ${auth}` }
     }).catch(() => {})
 
+    // 密码是凭据，审计只记录访问目标
+    await recordAdminAudit(event, 'backup.test-webdav', {
+      targetType: 'backup',
+      summary: { url, dir }
+    })
+
     return { success: true, message: 'WebDAV 连接测试成功' }
   } catch (err: any) {
+    await recordAdminAudit(event, 'backup.test-webdav', {
+      targetType: 'backup',
+      summary: { url, error: err.message || 'WebDAV 连接测试失败' },
+      result: ADMIN_AUDIT_RESULT.FAILURE
+    })
     return { success: false, message: err.message || 'WebDAV 连接测试失败' }
   }
 })

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { apiPermissionSchema } from './permissions'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 /**
  * 更新API Key
@@ -124,7 +125,22 @@ export default defineEventHandler(async (event) => {
         await tx.insert(apiKeyPermissions).values(permissionValues)
       }
 
-      return { apiKeyId }
+      return {
+        apiKeyId,
+        changedFields: Object.keys(updateData),
+        permissionsReplaced: validatedData.permissions !== undefined
+      }
+    })
+
+    await recordAdminAudit(event, 'api-key.update', {
+      targetType: 'api-key',
+      targetId: result.apiKeyId,
+      summary: {
+        changedFields: result.changedFields,
+        permissionsReplaced: result.permissionsReplaced,
+        isActive: validatedData.isActive,
+        permissions: validatedData.permissions
+      }
     })
 
     return {

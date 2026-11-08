@@ -6,6 +6,7 @@ import { setDefaultPlayTime } from '~~/server/utils/play-time-default'
 import { isDeadlockDetected, isUniqueViolation } from '~~/server/utils/db-errors'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   // 获取播出时段ID
@@ -157,6 +158,16 @@ export default defineEventHandler(async (event) => {
         return row
       })
 
+      await recordAdminAudit(event, 'play-time.update', {
+        targetType: 'play-time',
+        targetId: id,
+        summary: {
+          name: updatedPlayTime?.name,
+          enabled: updatedPlayTime?.enabled,
+          isDefault: updatedPlayTime?.isDefault
+        }
+      })
+
       return updatedPlayTime
     } catch (error: any) {
       console.error('更新播出时段失败:', error)
@@ -269,6 +280,16 @@ export default defineEventHandler(async (event) => {
         return { ...row, defaultCleared: current.isDefault && !isDefault }
       })
 
+      await recordAdminAudit(event, 'play-time.update', {
+        targetType: 'play-time',
+        targetId: id,
+        summary: {
+          name: updatedPlayTime?.name,
+          enabled: updatedPlayTime?.enabled,
+          isDefault: updatedPlayTime?.isDefault
+        }
+      })
+
       return updatedPlayTime
     } catch (error: any) {
       console.error('部分更新播出时段失败:', error)
@@ -324,6 +345,16 @@ export default defineEventHandler(async (event) => {
       if (schedulesCount > 0) {
         await db.update(schedules).set({ playTimeId: null }).where(eq(schedules.playTimeId, id))
       }
+
+      await recordAdminAudit(event, 'play-time.delete', {
+        targetType: 'play-time',
+        targetId: id,
+        summary: {
+          name: deletedPlayTime?.name,
+          affectedSongs: songsCount,
+          affectedSchedules: schedulesCount
+        }
+      })
 
       return {
         message: '播出时段已成功删除',

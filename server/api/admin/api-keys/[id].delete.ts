@@ -1,5 +1,6 @@
 import { apiKeyPermissions, apiKeys, db } from '~/drizzle/db'
 import { eq } from 'drizzle-orm'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 /**
  * 删除API Key
@@ -47,6 +48,12 @@ export default defineEventHandler(async (event) => {
 
       // 删除API Key
       await tx.delete(apiKeys).where(eq(apiKeys.id, apiKeyId))
+    })
+
+    await recordAdminAudit(event, 'api-key.delete', {
+      targetType: 'api-key',
+      targetId: apiKeyId,
+      summary: { name: apiKeyName }
     })
 
     return {

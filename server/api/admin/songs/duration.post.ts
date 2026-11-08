@@ -18,6 +18,7 @@ import {
   isNeteasePreviewLength
 } from '~~/server/utils/songDurationFetcher'
 
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
@@ -250,6 +251,12 @@ export default defineEventHandler(async (event) => {
 
     // 写入数据库
     await db.update(songs).set({ durationSeconds }).where(eq(songs.id, songId))
+
+    await recordAdminAudit(event, 'song.duration', {
+      targetType: 'song',
+      targetId: songId ?? undefined,
+      summary: { durationSeconds, platform }
+    })
 
     return {
       success: true,

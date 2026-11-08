@@ -4,6 +4,7 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { resolveBackupTestParams } from '~~/server/utils/backup-test-credentials'
 import { checkGitRepoAccess, normalizeGitApiMode } from '~~/server/utils/githubGitClient'
 import { assertSafeOutboundUrl } from '~~/server/utils/outbound-url'
+import { ADMIN_AUDIT_RESULT, recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -19,8 +20,18 @@ export default defineEventHandler(async (event) => {
 
   try {
     await checkGitRepoAccess({ apiBase, repo, branch, token, apiMode: normalizeGitApiMode(apiMode) })
+    // 令牌是凭据，审计只记录访问目标
+    await recordAdminAudit(event, 'backup.test-github', {
+      targetType: 'backup',
+      summary: { apiBase, repo, branch }
+    })
     return { success: true, message: 'Git 仓库连接测试成功' }
   } catch (err: any) {
+    await recordAdminAudit(event, 'backup.test-github', {
+      targetType: 'backup',
+      summary: { apiBase, repo, branch, error: err.message || 'Git 仓库连接测试失败' },
+      result: ADMIN_AUDIT_RESULT.FAILURE
+    })
     return { success: false, message: err.message || 'Git 仓库连接测试失败' }
   }
 })

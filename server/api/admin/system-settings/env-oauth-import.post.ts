@@ -7,6 +7,7 @@ import {
   getAggregateOAuthLoginTypesOrDefault,
   isSafeAggregateOAuthUrl
 } from '~~/server/utils/oauth-providers'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -97,6 +98,12 @@ export default defineEventHandler(async (event) => {
       .returning()
     settings = updated[0]
   }
+
+  // 导入的是环境变量里的凭据，审计只记录提供方与字段名
+  await recordAdminAudit(event, 'settings.env-oauth-import', {
+    targetType: 'system-settings',
+    summary: { provider, fields: Object.keys(updateData) }
+  })
 
   return maskSystemSettingsSecrets(settings)
 })

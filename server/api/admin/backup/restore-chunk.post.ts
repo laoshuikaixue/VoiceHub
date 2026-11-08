@@ -41,6 +41,7 @@ import { normalizeScheduleVisibilitySettings } from '~~/server/utils/system-sett
 import { getServerDate } from '~~/server/utils/serverTime'
 import { restoreCardCodeAssignmentRecord, syncRestoredCardCodeAssignment } from '~~/server/utils/card-code-backup'
 import { syncAllSequences } from '~~/server/utils/sequence-sync'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -51,6 +52,7 @@ export default defineEventHandler(async (event) => {
     tableName,
     records,
     mappings,
+    restoreBatchId,
     mode = 'merge',
     overwriteSuperAdmin = false,
     hasSuperAdminInBackup = false
@@ -1999,6 +2001,21 @@ export default defineEventHandler(async (event) => {
     stats.warnings.push(`自增序列同步失败: ${seqErrorMsg}`)
     console.error('自增序列同步失败:', seqError)
   }
+
+  await recordAdminAudit(event, 'backup.restore-chunk', {
+    targetType: 'backup',
+    targetId: `chunk:${tableName}`,
+    summary: {
+      restoreBatchId,
+      mode,
+      overwriteSuperAdmin: shouldOverwriteSuperAdmin,
+      processed: stats.processed,
+      created: stats.created,
+      updated: stats.updated,
+      errors: stats.errors,
+      warningCount: stats.warnings.length
+    }
+  })
 
   return {
     success: true,

@@ -7,6 +7,7 @@ import {
   NOTIFICATION_SOURCES
 } from '~~/server/utils/important-notification-policy'
 import { resolveNotificationBatchReference } from '~~/server/utils/notification-history-policy'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const batchReference = resolveNotificationBatchReference(getRouterParam(event, 'batchId'))
@@ -42,6 +43,12 @@ export default defineEventHandler(async (event) => {
   if (deletedRows.length === 0) {
     throw createApiError(404, SERVER_ERROR_CODES.NOTIFICATION_NOT_FOUND, '通知不存在')
   }
+
+  await recordAdminAudit(event, 'notification.delete-batch', {
+    targetType: 'notification',
+    targetId: batchReference.batchId ?? batchReference.notificationId,
+    summary: { deletedCount: deletedRows.length }
+  })
 
   return {
     success: true,

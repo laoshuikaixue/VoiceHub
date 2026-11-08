@@ -4,6 +4,7 @@ import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { uploadToS3, deleteFromS3 } from '~~/server/utils/s3Client'
 import { resolveBackupTestParams } from '~~/server/utils/backup-test-credentials'
 import { assertSafeOutboundUrl } from '~~/server/utils/outbound-url'
+import { ADMIN_AUDIT_RESULT, recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -41,8 +42,19 @@ export default defineEventHandler(async (event) => {
       testKey
     ).catch(() => {})
 
+    // 密钥是凭据，审计只记录访问目标
+    await recordAdminAudit(event, 'backup.test-s3', {
+      targetType: 'backup',
+      summary: { endpoint, bucket, region: region || 'auto' }
+    })
+
     return { success: true, message: 'S3 连接测试成功' }
   } catch (err: any) {
+    await recordAdminAudit(event, 'backup.test-s3', {
+      targetType: 'backup',
+      summary: { endpoint, bucket, error: err.message || 'S3 连接测试失败' },
+      result: ADMIN_AUDIT_RESULT.FAILURE
+    })
     return { success: false, message: err.message || 'S3 连接测试失败' }
   }
 })
