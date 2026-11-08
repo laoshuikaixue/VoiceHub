@@ -346,8 +346,8 @@ function stepUpEndpoint(options: {
   const event = {
     body: {
       reason: options.reason ?? 'super-admin-role',
-      password: options.password ?? 'Passw0rd!',
-      code: options.code
+      ...(options.password === null ? {} : { password: options.password ?? 'Passw0rd!' }),
+      ...(options.code ? { code: options.code } : {})
     },
     context: { user: operator }
   }
@@ -380,28 +380,43 @@ test('二次验证端点：频控与白名单先于密码校验，失败不留�
   assert.ok(!wrongPassword.calls.includes('issue-window'), '凭据错误不应签发窗口')
 })
 
-test('二次验证端点：已绑定认证器时必须动态码，校验通过才签发窗口', async () => {
-  const missingCode = stepUpEndpoint({ totp: true })
-  await assert.rejects(missingCode.handler(missingCode.event), {
-    statusCode: 400,
-    data: { code: SERVER_ERROR_CODES.AUTH_MISSING_REQUIRED_PARAMS }
-  })
-  assert.ok(missingCode.calls.includes('audit-failure'))
-  assert.ok(!missingCode.calls.includes('issue-window'))
+test('二次验证端点：已绑定验证器优先动态码，两种凭据均可单独通过', async () => {
+  // 只给动态码：不再校验口令
+  const codeOnly = stepUpEndpoint({ totp: true, code: '123456' })
+  const result = await codeOnly.handler(codeOnly.event)
+  assert.deepEqual(result, { success: true, reason: 'super-admin-role', expiresIn: 300 })
+  assert.ok(codeOnly.calls.includes('totp'))
+  assert.ok(!codeOnly.calls.includes('bcrypt'), '动态码通过时不应校验口令')
 
-  const badCode = stepUpEndpoint({ totp: true, code: '000000', codeValid: false })
+  // 动态码错误不回落口令校验
+  const badCode = stepUpEndpoint({ totp: true, password: 'Passw0rd!', code: '000000', codeValid: false })
   await assert.rejects(badCode.handler(badCode.event), {
     statusCode: 400,
     data: { code: SERVER_ERROR_CODES.AUTH_TOTP_CODE_INVALID }
   })
+  assert.ok(!badCode.calls.includes('bcrypt'))
   assert.ok(!badCode.calls.includes('issue-window'))
 
-  const okWithCode = stepUpEndpoint({ totp: true, code: '123456' })
-  const result = await okWithCode.handler(okWithCode.event)
-  assert.deepEqual(result, { success: true, reason: 'super-admin-role', expiresIn: 300 })
-  assert.ok(okWithCode.calls.includes('issue-window'))
+  // 已绑定验证器时只给口令同样放行
+  const passwordOnly = stepUpEndpoint({ totp: true })
+  assert.equal((await passwordOnly.handler(passwordOnly.event)).success, true)
+  assert.ok(passwordOnly.calls.includes('bcrypt'))
+  assert.ok(!passwordOnly.calls.includes('totp'))
+  assert.ok(passwordOnly.calls.includes('issue-window'))
 
-  const okNoTotp = stepUpEndpoint()
-  assert.equal((await okNoTotp.handler(okNoTotp.event)).success, true)
-  assert.ok(!okNoTotp.calls.includes('totp'))
+  // 未绑定验证器却提交动态码：拦住并引导改用口令
+  const codeWithoutTotp = stepUpEndpoint({ code: '123456' })
+  await assert.rejects(codeWithoutTotp.handler(codeWithoutTotp.event), {
+    statusCode: 403,
+    data: { code: SERVER_ERROR_CODES.AUTH_TOTP_NOT_ENABLED }
+  })
+  assert.ok(!codeWithoutTotp.calls.includes('issue-window'))
+
+  // 两种凭据都不给
+  const empty = stepUpEndpoint({ password: null })
+  await assert.rejects(empty.handler(empty.event), {
+    statusCode: 400,
+    data: { code: SERVER_ERROR_CODES.AUTH_MISSING_REQUIRED_PARAMS }
+  })
+  assert.equal(empty.calls.length, 0, '缺少凭据时不应消费频控额度')
 })

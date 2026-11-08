@@ -4921,6 +4921,8 @@ export const admin = {
     passwordPlaceholder: 'Enter your current password',
     code: 'Authenticator Code',
     codePlaceholder: 'Enter the 6-digit code from your authenticator app',
+    switchToTotp: 'Use authenticator code',
+    switchToPassword: 'Use password',
     verify: 'Verify',
     verifying: 'Verifying...',
     cancel: 'Cancel'

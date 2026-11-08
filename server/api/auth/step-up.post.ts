@@ -46,8 +46,13 @@ export default defineEventHandler(async (event) => {
 
   const password = typeof body?.password === 'string' ? body.password : ''
   const code = typeof body?.code === 'string' ? body.code.trim() : ''
-  if (!password) {
-    throw createApiError(400, SERVER_ERROR_CODES.USER_PASSWORD_REQUIRED, '请输入当前密码')
+  // 口令与动态验证码二选一；已绑定验证器时优先动态验证码
+  if (!password && !code) {
+    throw createApiError(
+      400,
+      SERVER_ERROR_CODES.AUTH_MISSING_REQUIRED_PARAMS,
+      '请输入当前密码或动态验证码'
+    )
   }
 
   const clientIp = getClientIP(event)
@@ -74,20 +79,14 @@ export default defineEventHandler(async (event) => {
     throw createApiError(403, SERVER_ERROR_CODES.AUTH_ACCOUNT_DISABLED_OR_RESTRICTED, '账号不可用')
   }
 
-  if (!(await bcrypt.compare(password, target.password))) {
-    await recordPasswordAudit(event, operator.id, auditAction, false, '密码错误')
-    // 凭据错误返回 403 而非 401，避免触发前端全局登出
-    throw createApiError(403, SERVER_ERROR_CODES.PERMISSION_STEP_UP_FAILED, '密码错误')
-  }
-
   const totpIdentity = await db.query.userIdentities.findFirst({
     where: and(eq(userIdentities.userId, operator.id), eq(userIdentities.provider, 'totp'))
   })
 
-  if (totpIdentity) {
-    if (!code) {
-      await recordPasswordAudit(event, operator.id, auditAction, false, '缺少动态验证码')
-      throw createApiError(400, SERVER_ERROR_CODES.AUTH_MISSING_REQUIRED_PARAMS, '请输入动态验证码')
+  if (code) {
+    if (!totpIdentity) {
+      await recordPasswordAudit(event, operator.id, auditAction, false, '账号未绑定验证器')
+      throw createApiError(403, SERVER_ERROR_CODES.AUTH_TOTP_NOT_ENABLED, '该账号未开启动态验证码验证')
     }
 
     // 先占用验证额度，防止并发请求同时绕过失败次数限制
@@ -109,12 +108,17 @@ export default defineEventHandler(async (event) => {
       )
     }
 
+    // 动态验证码错误不回落口令校验，避免一次请求内叠加两种猜测机会
     if (!authenticator.check(code, totpIdentity.providerUserId)) {
       await recordPasswordAudit(event, operator.id, auditAction, false, '动态验证码错误')
       throw createApiError(400, SERVER_ERROR_CODES.AUTH_TOTP_CODE_INVALID, '动态验证码错误')
     }
 
     await Promise.all([delStore(userFailureKey), delStore(ipFailureKey)])
+  } else if (!(await bcrypt.compare(password, target.password))) {
+    await recordPasswordAudit(event, operator.id, auditAction, false, '密码错误')
+    // 凭据错误返回 403 而非 401，避免触发前端全局登出
+    throw createApiError(403, SERVER_ERROR_CODES.PERMISSION_STEP_UP_FAILED, '密码错误')
   }
 
   const expiresIn = await issueStepUpWindow(event, reason)

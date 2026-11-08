@@ -29,24 +29,12 @@
             <p class="text-xs text-text-tertiary leading-relaxed mb-6">{{ resolvedDesc }}</p>
 
             <form class="space-y-4" @submit.prevent="submit">
-              <div class="space-y-2">
-                <label class="block text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1">
-                  {{ locale.password }}
-                </label>
-                <input
-                  v-model="password"
-                  autocomplete="current-password"
-                  class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
-                  :placeholder="locale.passwordPlaceholder"
-                  type="password"
-                >
-              </div>
-
-              <div v-if="requiresCode" class="space-y-2">
+              <div v-if="method === 'totp'" class="space-y-2">
                 <label class="block text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1">
                   {{ locale.code }}
                 </label>
                 <input
+                  ref="codeInput"
                   v-model="code"
                   autocomplete="one-time-code"
                   class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary tracking-[0.3em] font-black"
@@ -56,6 +44,30 @@
                   type="text"
                 >
               </div>
+
+              <div v-else class="space-y-2">
+                <label class="block text-[10px] font-black text-text-tertiary uppercase tracking-widest ml-1">
+                  {{ locale.password }}
+                </label>
+                <input
+                  ref="passwordInput"
+                  v-model="password"
+                  autocomplete="current-password"
+                  class="w-full bg-bg-primary border border-border-secondary rounded-2xl px-4 py-3 text-xs focus:outline-none focus:border-primary-30 transition-all text-text-primary"
+                  :placeholder="locale.passwordPlaceholder"
+                  type="password"
+                >
+              </div>
+
+              <button
+                v-if="boundTotp"
+                class="text-[10px] font-black text-primary uppercase tracking-widest hover:underline"
+                :disabled="loading"
+                type="button"
+                @click="toggleMethod"
+              >
+                {{ method === 'totp' ? locale.switchToPassword : locale.switchToTotp }}
+              </button>
 
               <div
                 v-if="error"
@@ -76,7 +88,7 @@
                 </button>
                 <button
                   class="flex-[2] px-6 py-4 bg-primary-hover hover:bg-primary text-white text-xs font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
-                  :disabled="loading || !password"
+                  :disabled="loading || !canSubmit"
                   type="submit"
                 >
                   <AppSpinner v-if="loading" :size="16" color="white" />
@@ -93,7 +105,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { AlertCircle, ShieldAlert, ShieldCheck } from '@lucide/vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { useAuth } from '~/composables/useAuth'
@@ -122,28 +134,50 @@ const resolvedDesc = computed(
 const auth = useAuth()
 const { localize } = useServerErrors()
 
-// 本地登录态可能落后于刚开启的双重认证，仅作为初始值，缺码时由服务端结论补位
-const requiresCode = ref(false)
-
 const password = ref('')
 const code = ref('')
 const loading = ref(false)
 const error = ref('')
+const passwordInput = ref(null)
+const codeInput = ref(null)
+
+// 本地登录态可能落后于实际绑定情况，仅决定默认验证方式，服务端仍会校验具体凭据
+const boundTotp = ref(false)
+const method = ref('password')
+const canSubmit = computed(() =>
+  method.value === 'totp' ? code.value.trim().length === 6 : !!password.value
+)
+
+const focusActiveInput = async () => {
+  await nextTick()
+  const input = method.value === 'totp' ? codeInput.value : passwordInput.value
+  input?.focus?.()
+}
+
+const toggleMethod = () => {
+  if (loading.value) return
+  method.value = method.value === 'totp' ? 'password' : 'totp'
+  error.value = ''
+  focusActiveInput()
+}
 
 watch(
   () => props.show,
   (visible) => {
     if (!visible) return
-    requiresCode.value = !!auth.user.value?.has2FA
+    boundTotp.value = !!auth.user.value?.has2FA
+    // 已绑定验证器时优先用动态验证码
+    method.value = boundTotp.value ? 'totp' : 'password'
     password.value = ''
     code.value = ''
     loading.value = false
     error.value = ''
+    focusActiveInput()
   }
 )
 
 const submit = async () => {
-  if (loading.value || !password.value) return
+  if (loading.value || !canSubmit.value) return
   loading.value = true
   error.value = ''
   try {
@@ -152,17 +186,19 @@ const submit = async () => {
       credentials: 'include',
       body: {
         reason: props.reason,
-        password: password.value,
-        ...(requiresCode.value ? { code: code.value } : {})
+        ...(method.value === 'totp' ? { code: code.value.trim() } : { password: password.value })
       }
     })
     emit('update:show', false)
     emit('verified')
   } catch (err) {
-    // 服务端以库内 TOTP 身份为准，缺码时展开动态码输入供重新提交
-    if (extractErrorCode(err) === 'AUTH_MISSING_REQUIRED_PARAMS') {
-      requiresCode.value = true
+    const errorCode = extractErrorCode(err)
+    // 登录态误报已绑定验证器时改用口令验证
+    if (errorCode === 'AUTH_TOTP_NOT_ENABLED') {
+      boundTotp.value = false
+      method.value = 'password'
       error.value = ''
+      focusActiveInput()
     } else {
       error.value = localize(err)
     }

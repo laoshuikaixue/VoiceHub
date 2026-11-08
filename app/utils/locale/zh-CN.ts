@@ -4770,6 +4770,8 @@ export const admin = {
     passwordPlaceholder: '请输入当前登录密码',
     code: '动态验证码',
     codePlaceholder: '请输入认证器应用生成的6位验证码',
+    switchToTotp: '使用动态验证码验证',
+    switchToPassword: '使用密码验证',
     verify: '验证',
     verifying: '正在验证...',
     cancel: '取消'
