@@ -42,6 +42,8 @@ const allowedEndpoints = new Map<string, Set<string>>([
   ['album', new Set(['GET'])],
   ['lyric', new Set(['GET'])],
   ['lyric/new', new Set(['GET'])],
+  // 播客节目列表
+  ['dj/program', new Set(['GET'])],
   // 听歌识曲（音频指纹走请求体，仅 POST）
   ['audio/match', new Set(['POST'])],
   // 评论
