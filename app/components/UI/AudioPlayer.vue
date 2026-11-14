@@ -329,7 +329,7 @@ import { useLocale } from '~/utils/locale'
 import { isBilibiliSong } from '~/utils/bilibiliSource'
 import { PLATFORM_AUTHORIZED_PLATFORMS } from '~/utils/platforms'
 import { markPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
-import { isPreviewClipDuration } from '~/utils/preview-duration'
+import { isPreviewClipDuration, normalizeDurationSeconds } from '~/utils/preview-duration'
 import { useTheme } from '~/composables/useTheme'
 import {
   getCachedMusicUrlSource,
@@ -766,17 +766,11 @@ const checkPlaybackStall = async () => {
   await handleError(new Error('音频加载超时'), { skipSourceSwitch: true })
 }
 
-const normalizeSongDurationSeconds = (value) => {
-  const duration = Number(value || 0)
-  if (!Number.isFinite(duration) || duration <= 0) return 0
-  return duration > 10000 ? duration / 1000 : duration
-}
-
 const isInvalidTencentAudio = (duration, url) => {
   if (activeSong.value?.musicPlatform !== 'tencent') return false
 
   const numericDuration = Number(duration)
-  const expectedDuration = normalizeSongDurationSeconds(
+  const expectedDuration = normalizeDurationSeconds(
     activeSong.value?.duration ?? activeSong.value?.durationSeconds
   )
   if (
@@ -796,7 +790,7 @@ const isPreviewAudio = (duration) => {
   const song = activeSong.value
   if (!song || !PLATFORM_AUTHORIZED_PLATFORMS.includes(song.musicPlatform)) return false
   if (song.sourceInfo?.type === 'voice') return false
-  const expected = normalizeSongDurationSeconds(song.duration ?? song.durationSeconds)
+  const expected = normalizeDurationSeconds(song.duration ?? song.durationSeconds)
   return isPreviewClipDuration(duration, expected)
 }
 
@@ -908,7 +902,7 @@ const getNeteaseScrobbleSourceId = (song, songId) => {
 }
 
 const getNeteaseScrobbleThreshold = (durationValue) => {
-  const normalizedDuration = normalizeSongDurationSeconds(durationValue)
+  const normalizedDuration = normalizeDurationSeconds(durationValue)
   if (!normalizedDuration) return NETEASE_SCROBBLE_MIN_SECONDS
   return Math.min(
     NETEASE_SCROBBLE_MIN_SECONDS,
@@ -955,7 +949,7 @@ const tryScrobbleNeteaseSong = async (currentTimeValue, durationValue, isEnded =
   const playEpoch = neteaseScrobblePlayEpoch.value
   try {
     const totalSec =
-      normalizeSongDurationSeconds(durationValue) || normalizeSongDurationSeconds(song.duration)
+      normalizeDurationSeconds(durationValue) || normalizeDurationSeconds(song.duration)
     const playTime = Math.max(
       1,
       Math.round(Math.min(currentTimeValue, totalSec || currentTimeValue))

@@ -8,6 +8,7 @@ import { PLATFORM_AUTHORIZED_PLATFORMS } from '~/utils/platforms'
 import { isPlaybackUrlInvalid } from '~/utils/invalidPlaybackUrls'
 import { persistQqMusicCookie, clearQqMusicLoginState, QQ_MUSIC_COOKIE_KEY } from '~/utils/qqCookie'
 import { resolvePluginUrl } from '~/utils/pluginResolver'
+import { getExpectedDurationSeconds, isPreviewAudioUrl, PREVIEW_PRONE_PLATFORMS } from '~/utils/preview-duration'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { shallowReactive } from 'vue'
 
@@ -30,6 +31,8 @@ export type MusicUrlResolveOptions = {
   musicInfo?: MusicTrackMeta
   songId?: number
   selectionToken?: string
+  /** 下载链路：禁止试听片段兜底，无完整版时直接抛错 */
+  strictComplete?: boolean
 }
 
 /**
@@ -344,6 +347,25 @@ export async function getMusicUrlResult(
   // 优先使用 options 中的 quality，否则使用全局设置
   const quality = options?.quality !== undefined ? options.quality : getQuality(platform)
 
+  // 完整性门禁：已知存在试听的平台预检候选链接时长，试听片段跳过让链路继续找完整版
+  const expectedDurationSeconds = getExpectedDurationSeconds(options?.musicInfo)
+  const previewProne = import.meta.client && PREVIEW_PRONE_PLATFORMS.includes(platform) && expectedDurationSeconds > 0
+  let previewFallback: MusicUrlResolveResult | null = null
+  const acceptComplete = async (
+    url: string,
+    source: string,
+    actualQuality?: string | null,
+    extra?: Partial<Pick<MusicUrlResolveResult, 'normalizedMusicId' | 'idType'>>
+  ): Promise<MusicUrlResolveResult | null> => {
+    if (previewProne && await isPreviewAudioUrl(url, expectedDurationSeconds)) {
+      console.warn(`[musicUrl] 跳过试听或不可解码片段（来源 ${source}），继续寻找完整版`)
+      previewFallback = { url, source, actualQuality }
+      return null
+    }
+    const accepted = acceptResult(url, source, actualQuality)
+    return accepted ? { ...accepted, ...extra } : null
+  }
+
   // ChKSz 音源（用户自配 apikey）：非 VIP 登录态下最优先，VIP 登录态下官方链路之后的次优先
   const isExcluded = (source: string) => (options?.excludeSources || []).includes(source)
   const tryChksz = async (chkszQuality: number | string): Promise<MusicUrlResolveResult | null> => {
@@ -352,7 +374,7 @@ export async function getMusicUrlResult(
     }
     const chkszUrl = await getChkszMusicUrl(platform, musicId, chkszQuality)
     if (chkszUrl) {
-      return acceptResult(chkszUrl, 'chksz')
+      return await acceptComplete(chkszUrl, 'chksz')
     }
     return null
   }
@@ -374,7 +396,7 @@ export async function getMusicUrlResult(
   const tryPlugins = async () => {
     try {
       const result = await resolvePluginUrl(platform, musicId, quality, options)
-      if (result?.url) return acceptResult(result.url, result.source)
+      if (result?.url) return await acceptComplete(result.url, result.source)
     } catch (error) { console.warn('[musicUrl] 插件解析阶段失败', error) }
     return null
   }
@@ -413,13 +435,11 @@ export async function getMusicUrlResult(
         if (platform === 'tencent' && qqMusicCookie && response.authUsed === false) {
           console.warn('[musicUrl] 已检测到 QQ 音乐本地登录态，但后端解析未使用登录 Cookie')
         }
-        rememberMusicUrlSource(response.url, response.source)
-        return {
-          url: response.url,
-          source: response.source,
+        const accepted = await acceptComplete(response.url, response.source, undefined, {
           normalizedMusicId: response.normalizedMusicId,
           idType: response.idType
-        }
+        })
+        if (accepted) return accepted
       }
 
       throw new Error(response?.message || 'QQ音乐播放链接解析失败')
@@ -465,8 +485,8 @@ export async function getMusicUrlResult(
         const url =
           data?.data?.[ygkingMid] || (data?.data && data.data[Object.keys(data.data)[0]])
         if (data?.code === 0 && url && !isKnownInvalidQqAudioUrl(String(url))) {
-          rememberMusicUrlSource(String(url), 'ygking-qq')
-          return { url: String(url), source: 'ygking-qq' }
+          const accepted = await acceptComplete(String(url), 'ygking-qq')
+          if (accepted) return accepted
         }
       } catch {
         // 继续尝试后端 HYW 与 vkeys。
@@ -505,8 +525,8 @@ export async function getMusicUrlResult(
           ).then((response) => (response.ok ? response.json() : null))
           const url = v2Response?.data?.url
           if (v2Response?.code === 200 && url && !isKnownInvalidQqAudioUrl(String(url))) {
-            rememberMusicUrlSource(String(url), 'vkeys-v3')
-            return { url: String(url), source: 'vkeys-v3' }
+            const accepted = await acceptComplete(String(url), 'vkeys-v3')
+            if (accepted) return accepted
           }
         }
       } catch {
@@ -537,11 +557,9 @@ export async function getMusicUrlResult(
               if (isKnownInvalidQqAudioUrl(url)) {
                 continue
               }
-              rememberMusicUrlSource(url, 'vkeys')
-              return {
-                url,
-                source: 'vkeys'
-              }
+              const accepted = await acceptComplete(url, 'vkeys')
+              if (accepted) return accepted
+              continue
             }
           }
         } catch {
@@ -561,6 +579,8 @@ export async function getMusicUrlResult(
     const pluginResult = await tryPlugins()
     if (pluginResult) return pluginResult
 
+    // 无完整版时兜底试听片段保证可播；下载链路禁止兜底
+    if (previewFallback && !options?.strictComplete) return previewFallback
     throw new Error('QQ音乐播放链接解析失败')
   }
 
@@ -608,7 +628,7 @@ export async function getMusicUrlResult(
   // 先使用统一组件的音源选择逻辑
   const backupResult = await getSongUrl(finalMusicId, quality, platform, undefined, extendedOptions)
   if (backupResult.success && backupResult.url) {
-    const accepted = acceptResult(backupResult.url, backupResult.source || 'music-source', backupResult.actualQuality)
+    const accepted = await acceptComplete(backupResult.url, backupResult.source || 'music-source', backupResult.actualQuality)
     if (accepted) return accepted
   }
 
@@ -730,12 +750,14 @@ export async function getMusicUrlResult(
       if (endpoint === 'tencent' && isKnownInvalidQqAudioUrl(url)) {
         continue
       }
-      const accepted = acceptResult(url, 'vkeys')
+      const accepted = await acceptComplete(url, 'vkeys')
       if (accepted) return accepted
       continue
     }
   }
 
+  // 无完整版时兜底试听片段保证可播；下载链路禁止兜底
+  if (previewFallback && !options?.strictComplete) return previewFallback
   // vkeys API返回了响应但没有有效的播放链接
   throw new Error('vkeys API返回的播放链接无效')
 }
