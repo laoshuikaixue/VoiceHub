@@ -1768,7 +1768,7 @@ const PRESET_FIELDS = [
 
 const presets = ref([])
 const newPresetName = ref('')
-const batchFormat = ref('pdf')
+const batchFormat = ref('image')
 const isBatchExporting = ref(false)
 const batchProgress = ref(null)
 
