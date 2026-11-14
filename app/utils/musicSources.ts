@@ -147,14 +147,6 @@ export const MUSIC_SOURCE_CONFIG: MusicSourceConfig = {
       timeout: 10000
     },
     {
-      id: 'ygking-qq',
-      name: 'Ygking QQ 音乐备用',
-      baseUrl: 'https://api.ygking.top/api/song/url',
-      priority: 4,
-      enabled: true,
-      timeout: 8000
-    },
-    {
       id: 'netease-gdstudio',
       name: 'GD Studio 网易云',
       baseUrl: 'https://music-api.gdstudio.xyz/api.php',

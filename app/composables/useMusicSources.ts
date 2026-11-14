@@ -1787,8 +1787,6 @@ export const useMusicSources = () => {
           }
         ]
       }
-    } else if (source.id === 'ygking-qq') {
-      throw new Error('Ygking QQ 音乐仅支持播放链接获取')
     } else if (source.id === 'netease-ikun') {
       throw new Error('ikun 网易云仅支持播放链接获取')
     } else {
@@ -1989,18 +1987,14 @@ export const useMusicSources = () => {
           sourcesToTry.push({ source: miguSource, type: 'migu' as any })
         }
       } else if (platform === 'tencent') {
-        // QQ 音乐保留所有 Vkeys 路径，新增直连源仅作为最后回退。
+        // QQ 音乐使用 Vkeys v3/v2 路径
         const v3 = enabledSources.find((source) => source.id === 'vkeys-v3')
-        const ygkingSource = enabledSources.find((source) => source.id === 'ygking-qq')
         const v2 = enabledSources.find((source) => source.id === 'vkeys')
         if (v3) {
           sourcesToTry.push({ source: v3, type: 'tencent' })
         }
         if (v2) {
           sourcesToTry.push({ source: v2, type: 'tencent' })
-        }
-        if (ygkingSource) {
-          sourcesToTry.push({ source: ygkingSource, type: 'tencent' })
         }
       } else {
         // 网易云音乐平台（默认）
@@ -2119,24 +2113,6 @@ export const useMusicSources = () => {
             const v2Response: any = await $fetch(v2Url, { timeout: v2Source.timeout || 8000 })
             if (v2Response?.code === 200 && v2Response?.data?.url) {
               url = String(v2Response.data.url)
-            }
-          } else if (source.id === 'ygking-qq') {
-            const qualityMap: Record<number, string> = {
-              4: '128',
-              8: '320',
-              10: 'flac',
-              11: 'master',
-              14: 'master'
-            }
-            const qualityKey = qualityMap[requestedQuality] || '320'
-            const response: any = await $fetch(source.baseUrl, {
-              params: { mid: idParam, quality: qualityKey },
-              timeout: source.timeout || 8000
-            })
-            if (response?.code === 0 && response?.data) {
-              const directUrl =
-                response.data[idParam] || response.data[Object.keys(response.data)[0]]
-              if (directUrl) url = String(directUrl)
             }
           } else if (source.id === 'vkeys') {
             // Vkeys API

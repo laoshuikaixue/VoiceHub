@@ -1,6 +1,6 @@
 import { getTxSongPlayableInfo } from '~~/server/utils/native_tx'
 
-// QQ 数字 songId → 字母 songmid，供水端直连的第三方音源（ygking 等）复用；已是 mid 则原样返回
+// QQ 数字 songId → 字母 songmid；已是 mid 则原样返回
 export default defineEventHandler(async (event) => {
   const musicId = String(getQuery(event)?.musicId || '').trim()
   if (!musicId) {

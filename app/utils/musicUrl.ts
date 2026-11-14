@@ -54,37 +54,6 @@ export type MusicUrlResolveResult = {
   actualQuality?: string | null
 }
 
-// QQ 数字 songId → 字母 songmid 的前端解析缓存与并发去重，供水端直连第三方音源（ygking 等）复用
-const txMidResolveCache = new Map<string, string>()
-const txMidResolveInflight = new Map<string, Promise<string>>()
-const resolveTencentMid = async (musicId: string | number): Promise<string> => {
-  const raw = String(musicId ?? '').trim()
-  // 已是字母 mid 直接返回，无需请求后端
-  if (!/^\d+$/.test(raw)) return raw
-  const cached = txMidResolveCache.get(raw)
-  if (cached) return cached
-  const inflight = txMidResolveInflight.get(raw)
-  if (inflight) return inflight
-
-  const promise = (async () => {
-    try {
-      const res: any = await $fetch('/api/native-api/qq/resolve-mid', { params: { musicId: raw } })
-      const mid = typeof res?.musicId === 'string' ? res.musicId.trim() : ''
-      if (res?.success && mid && mid !== raw) {
-        txMidResolveCache.set(raw, mid)
-        return mid
-      }
-    } catch (error) {
-      console.warn('[musicUrl] QQ songId 解析 MID 失败，按原始 ID 继续:', error)
-    }
-    return raw
-  })()
-
-  txMidResolveInflight.set(raw, promise)
-  promise.finally(() => txMidResolveInflight.delete(raw))
-  return promise
-}
-
 export const INVALID_QQ_AUDIO_URL_SUFFIX = '/2149972737147268278.mp3'
 
 // 星海音源（咪咕备用通道）：由国内服务器代理获取链接，规避咪咕对海外 IP 的屏蔽
@@ -410,7 +379,7 @@ export async function getMusicUrlResult(
         ? window.localStorage.getItem('qq_music_cookie') || undefined
         : undefined
     const requestBackendResolve = async (
-      strategy: 'official-first' | 'fallback' | 'aggregator' = 'fallback'
+      strategy: 'official-first' | 'aggregator' = 'aggregator'
     ) => {
       const response: any = await $fetch('/api/music/resolve-url', {
         method: 'POST',
@@ -463,42 +432,6 @@ export async function getMusicUrlResult(
     const chkszResult = await tryChksz(qualityCandidates[0])
     if (chkszResult) {
       return chkszResult
-    }
-
-    // K×H 音源提取的 QQ 直连接口支持浏览器跨域，优先于 vkeys 使用。
-    if (!excludedSources.has('ygking-qq')) {
-      const ygkingQuality: Record<number, string> = {
-        4: '128',
-        8: '320',
-        10: 'flac',
-        11: 'master',
-        14: 'master'
-      }
-      const qualityKey = ygkingQuality[qualityCandidates[0]] || '320'
-      // ygking 只接受字母 songmid，历史数字 songId 需先解析为 mid 再请求
-      const ygkingMid = await resolveTencentMid(musicId)
-      try {
-        const data: any = await fetch(
-          `https://api.ygking.top/api/song/url?mid=${encodeURIComponent(ygkingMid)}&quality=${encodeURIComponent(qualityKey)}`,
-          { signal: AbortSignal.timeout(5000) }
-        ).then((result) => (result.ok ? result.json() : null))
-        const url =
-          data?.data?.[ygkingMid] || (data?.data && data.data[Object.keys(data.data)[0]])
-        if (data?.code === 0 && url && !isKnownInvalidQqAudioUrl(String(url))) {
-          const accepted = await acceptComplete(String(url), 'ygking-qq')
-          if (accepted) return accepted
-        }
-      } catch {
-        // 继续尝试后端 HYW 与 vkeys。
-      }
-    }
-
-    if (!excludedSources.has('hyw-tx')) {
-      try {
-        return await requestBackendResolve()
-      } catch (error: any) {
-        console.warn('[musicUrl] HYW 后端解析失败，继续尝试 vkeys 音源:', error?.message || error)
-      }
     }
 
     // v3 负责探测歌曲支持的音质，播放链接仍由 v2 获取。
