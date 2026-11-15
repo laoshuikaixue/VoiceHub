@@ -2150,7 +2150,6 @@ export const pages = {
       microphoneTimeout: 'Microphone permission timed out. Check system permissions',
       microphoneReady: 'Microphone connected. Click to start recognition',
       audioMatchInitFailed: 'Cannot initialize recognition. Please retry',
-      microphoneAccessFailed: 'Cannot access microphone. Please try again later',
       preparing: 'Preparing...',
       recognizing: 'Recognizing...',
       startAudioMatch: 'Start Recognition',

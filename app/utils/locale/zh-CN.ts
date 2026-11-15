@@ -2095,7 +2095,6 @@ export const pages = {
       microphoneTimeout: '麦克风授权超时，请在系统设置中确认已允许麦克风权限',
       microphoneReady: '麦克风已连接，点击开始识曲',
       audioMatchInitFailed: '无法初始化听歌识曲，请重试',
-      microphoneAccessFailed: '无法访问麦克风，请稍后重试',
       preparing: '准备中...',
       recognizing: '识别中...',
       startAudioMatch: '开始识曲',
