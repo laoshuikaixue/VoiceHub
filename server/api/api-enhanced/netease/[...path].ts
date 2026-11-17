@@ -1,7 +1,10 @@
 import { existsSync } from 'node:fs'
+import { randomBytes } from 'node:crypto'
 import { isIP } from 'node:net'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { buildRedisKey, getRedisClient } from '~~/server/utils/redis'
+import { getServerTimestamp } from '~~/server/utils/serverTime'
 import {
   isNeteaseRealIpEnabled,
   resolveNeteaseRealIp
@@ -77,37 +80,86 @@ const allowedEndpoints = new Map<string, Set<string>>([
 // xeapi 公钥缓存文件路径（由 generateConfig 写入系统临时目录）
 const xeapiPublicKeyPath = join(tmpdir(), 'xeapi_public_key')
 
-// 扫码登录结果暂存（unikey → cookie），用于 803 响应丢失后的补发
-const QR_LOGIN_TTL_MS = 5 * 60 * 1000
-const qrLoginCache = new Map<string, { cookie: string; at: number }>()
+// 扫码登录结果暂存（发起方 + unikey → cookie），用于 803 响应丢失后的补发。
+// 该路由匿名可达，unikey 又出现在二维码内容里，若只按 unikey 回放，任何拿到该 key
+// 的客户端都能兑换 cookie，等于把一次性的 803 延长成 5 分钟窗口。因此条目与发起方
+// 绑定：qr/key 下发随机 owner cookie，check 时校验一致才回放。
+const QR_LOGIN_TTL_SECONDS = 5 * 60
+const QR_OWNER_COOKIE = 'vh_qr_owner'
+const QR_CACHE_MAX_ENTRIES = 500
+const QR_STORE_TIMEOUT_MS = 300
 
-const rememberQrLogin = (key: string, cookie: string) => {
+type QrLoginRecord = { cookie: string; at: number }
+
+const qrLoginMemory = new Map<string, QrLoginRecord>()
+const qrLoginCacheKey = (owner: string, unikey: string) => `${owner}:${unikey}`
+const qrLoginRedisKey = (cacheKey: string) => buildRedisKey('netease-qr-login', cacheKey)
+
+/** 共享存储只做加速：不可用或过慢时按进程内缓存处理，不阻塞登录链路 */
+const getQrRedis = () =>
+  withDeadline(getRedisClient(), QR_STORE_TIMEOUT_MS, 'qr-login-store').catch(() => null)
+
+const readRequestCookie = (event: any, name: string): string => {
+  const raw = event?.node?.req?.headers?.cookie
+  if (typeof raw !== 'string') return ''
+  for (const part of raw.split(';')) {
+    const index = part.indexOf('=')
+    if (index <= 0) continue
+    if (part.slice(0, index).trim() === name) return part.slice(index + 1).trim()
+  }
+  return ''
+}
+
+const rememberQrLogin = async (owner: string, unikey: string, cookie: string) => {
+  const cacheKey = qrLoginCacheKey(owner, unikey)
   // 过期条目交给分钟级定时任务处理。到上限时按插入顺序淘汰最旧的一条，
   // 不能整体 clear，否则会误删其他访客仍在有效期内的 803 结果。
-  if (qrLoginCache.size >= 500) {
-    const oldest = qrLoginCache.keys().next()
-    if (!oldest.done) qrLoginCache.delete(oldest.value)
+  if (qrLoginMemory.size >= QR_CACHE_MAX_ENTRIES) {
+    const oldest = qrLoginMemory.keys().next()
+    if (!oldest.done) qrLoginMemory.delete(oldest.value)
   }
-  qrLoginCache.set(key, { cookie, at: Date.now() })
+  qrLoginMemory.set(cacheKey, { cookie, at: getServerTimestamp() })
+
+  // 多实例部署（Vercel / Netlify）下首次 803 与前端重试可能落在不同实例，
+  // 进程内缓存命中不了，配置 Redis 时写一份共享副本。写失败只影响补发，不影响登录。
+  const redis = await getQrRedis()
+  if (!redis) return
+  await withDeadline(
+    redis.set(qrLoginRedisKey(cacheKey), cookie, { EX: QR_LOGIN_TTL_SECONDS }),
+    QR_STORE_TIMEOUT_MS,
+    'qr-login-store'
+  ).catch((error: unknown) => {
+    console.warn(
+      `[Netease] 扫码结果写入共享存储失败: ${error instanceof Error ? error.message : String(error)}`
+    )
+  })
 }
 
-const replayQrLogin = (key: string): string | undefined => {
-  const hit = qrLoginCache.get(key)
-  if (!hit) return undefined
-  if (Date.now() - hit.at > QR_LOGIN_TTL_MS) {
-    qrLoginCache.delete(key)
-    return undefined
+const replayQrLogin = async (owner: string, unikey: string): Promise<string | undefined> => {
+  const cacheKey = qrLoginCacheKey(owner, unikey)
+  const hit = qrLoginMemory.get(cacheKey)
+  if (hit) {
+    if (getServerTimestamp() - hit.at <= QR_LOGIN_TTL_SECONDS * 1000) return hit.cookie
+    qrLoginMemory.delete(cacheKey)
   }
+
+  const redis = await getQrRedis()
+  if (!redis) return undefined
   // 不在命中时删除：前端重试与轮询可能并发，先到的 803 删掉缓存后，
   // 后到的 800 会把成功状态覆盖成「已过期」。缓存由 TTL 统一回收。
-  return hit.cookie
+  const shared = await withDeadline(
+    redis.get(qrLoginRedisKey(cacheKey)),
+    QR_STORE_TIMEOUT_MS,
+    'qr-login-store'
+  ).catch(() => null)
+  return shared || undefined
 }
 
-// 低流量下 size 阈值兜不住过期条目，按分钟兜底清理；unref 避免阻止进程退出
+// 低流量下条目上限兜不住过期数据，按分钟兜底清理；unref 避免阻止进程退出
 setInterval(() => {
-  const cutoff = Date.now() - QR_LOGIN_TTL_MS
-  for (const [k, v] of qrLoginCache) {
-    if (v.at < cutoff) qrLoginCache.delete(k)
+  const cutoff = getServerTimestamp() - QR_LOGIN_TTL_SECONDS * 1000
+  for (const [k, v] of qrLoginMemory) {
+    if (v.at < cutoff) qrLoginMemory.delete(k)
   }
 }, 60 * 1000).unref()
 
@@ -277,14 +329,25 @@ export default defineEventHandler(async (event) => {
     const body = result?.body ?? result
     // 扫码结果补发：803 只在网易云侧出现一次，前端那次响应若被网关打断（502/504），
     // cookie 就永久丢失，用户看到的是「手机确认成功却没登上」。按 unikey 暂存后回放。
+    // 复用的 owner 让同一浏览器重开二维码时仍能回放到自己那次的 803。
+    if (endpointPath === 'login/qr/key' && !readRequestCookie(event, QR_OWNER_COOKIE)) {
+      appendHeader(
+        event,
+        'set-cookie',
+        `${QR_OWNER_COOKIE}=${randomBytes(16).toString('hex')}; Path=/api/api-enhanced/netease` +
+          `; Max-Age=${QR_LOGIN_TTL_SECONDS}; HttpOnly; SameSite=Lax`
+      )
+    }
     if (endpointPath === 'login/qr/check') {
       const qrKey = typeof params.key === 'string' ? params.key : ''
+      const owner = readRequestCookie(event, QR_OWNER_COOKIE)
       const code = Number(body?.code)
-      const cookie = typeof body?.cookie === 'string' ? body.cookie : ''
-      if (qrKey && code === 803 && cookie) {
-        rememberQrLogin(qrKey, cookie)
-      } else if (qrKey && code !== 803) {
-        const replayed = replayQrLogin(qrKey)
+      const loginCookie = typeof body?.cookie === 'string' ? body.cookie : ''
+      // owner 缺失（客户端禁用 Cookie）时不缓存也不回放，退回改造前的行为
+      if (qrKey && owner && code === 803 && loginCookie) {
+        await rememberQrLogin(owner, qrKey, loginCookie)
+      } else if (qrKey && owner && code !== 803) {
+        const replayed = await replayQrLogin(owner, qrKey)
         if (replayed) {
           // 只回干净结构，避免把上游的「二维码已过期」等文案一起带给前端
           return { code: 803, message: '登录成功', cookie: replayed }

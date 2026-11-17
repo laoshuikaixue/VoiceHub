@@ -148,8 +148,10 @@ const loading = ref(false)
 const status = ref(0) // 800已过期、801待扫码、802已扫码、803登录成功
 const isExpired = ref(false)
 let timer: any = null
-let retryTimer: any = null
+let retryTimer = null
 let unikey = ''
+// 打开二维码或关闭弹窗时递增，用于作废在途请求与已排队的补查
+let session = 0
 
 const handleClose = () => {
   stopPolling()
@@ -157,6 +159,7 @@ const handleClose = () => {
 }
 
 const stopPolling = () => {
+  session += 1
   if (timer) {
     clearInterval(timer)
     timer = null
@@ -169,6 +172,7 @@ const stopPolling = () => {
 
 const initLogin = async () => {
   stopPolling()
+  const currentSession = session
   loading.value = true
   isExpired.value = false
   status.value = 0
@@ -176,6 +180,7 @@ const initLogin = async () => {
   try {
     // 获取二维码登录密钥
     const keyRes = await fetch(`${BASE_URL}/login/qr/key?timestamp=${Date.now()}`)
+    if (currentSession !== session) return
     const keyData = await keyRes.json()
     unikey = keyData.data.unikey
 
@@ -183,6 +188,7 @@ const initLogin = async () => {
     const qrRes = await fetch(
       `${BASE_URL}/login/qr/create?key=${unikey}&qrimg=true&timestamp=${Date.now()}&ua=pc`
     )
+    if (currentSession !== session) return
     const qrData = await qrRes.json()
     qrImg.value = qrData.data.qrimg
     status.value = 801
@@ -190,16 +196,19 @@ const initLogin = async () => {
     // 启动轮询
     timer = setInterval(checkStatus, 3000)
   } catch (err) {
+    if (currentSession !== session) return
     console.error('初始化登录失败:', err)
     stopPolling()
     status.value = 0
   } finally {
-    loading.value = false
+    // 已被关闭或换了新二维码时不要覆盖新一轮的加载态
+    if (currentSession === session) loading.value = false
   }
 }
 
-const checkStatus = async (retry = 0) => {
-  if (!unikey) return
+const checkStatus = async (retry = 0, currentSession = session) => {
+  // 弹窗已关闭、二维码已重开或已换新码时，在途请求的后续处理全部作废
+  if (!unikey || !props.show || currentSession !== session) return
 
   try {
     const res = await fetch(
@@ -209,6 +218,7 @@ const checkStatus = async (retry = 0) => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
     if (typeof data.code !== 'number') throw new Error('unexpected response')
+    if (currentSession !== session) return
 
     status.value = data.code
 
@@ -225,10 +235,11 @@ const checkStatus = async (retry = 0) => {
   } catch (err) {
     // 803 的响应一旦丢失，二维码就被消费掉了，用户会看到「手机确认成功但没登上」。
     // 失败后立即补查两次（间隔 1.2s），比等下一轮 3s 轮询更容易抢在失效前拿到 cookie。
+    if (currentSession !== session || !props.show) return
     if (retry < 2) {
       retryTimer = setTimeout(() => {
         retryTimer = null
-        checkStatus(retry + 1)
+        checkStatus(retry + 1, currentSession)
       }, 1200)
     } else {
       console.error('检查二维码状态失败:', err)
