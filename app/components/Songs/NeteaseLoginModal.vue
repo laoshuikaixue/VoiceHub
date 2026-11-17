@@ -182,6 +182,7 @@ const initLogin = async () => {
     const keyRes = await fetch(`${BASE_URL}/login/qr/key?timestamp=${Date.now()}`)
     if (currentSession !== session) return
     const keyData = await keyRes.json()
+    if (currentSession !== session) return
     unikey = keyData.data.unikey
 
     // 生成二维码
@@ -190,6 +191,7 @@ const initLogin = async () => {
     )
     if (currentSession !== session) return
     const qrData = await qrRes.json()
+    if (currentSession !== session) return
     qrImg.value = qrData.data.qrimg
     status.value = 801
 
@@ -198,7 +200,6 @@ const initLogin = async () => {
   } catch (err) {
     if (currentSession !== session) return
     console.error('初始化登录失败:', err)
-    stopPolling()
     status.value = 0
   } finally {
     // 已被关闭或换了新二维码时不覆盖新一轮的加载态
