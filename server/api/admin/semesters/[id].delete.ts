@@ -1,4 +1,5 @@
 import { db, eq, semesters, songs } from '~/drizzle/db'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   // 获取学期 ID
@@ -46,6 +47,12 @@ export default defineEventHandler(async (event) => {
 
   // 删除学期
   await db.delete(semesters).where(eq(semesters.id, semesterId))
+
+  await recordAdminAudit(event, 'semester.delete', {
+    targetType: 'semester',
+    targetId: semesterId,
+    summary: { name: semester.name }
+  })
 
   return {
     success: true,

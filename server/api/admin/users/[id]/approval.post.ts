@@ -41,6 +41,7 @@ async function notifyRejected(name: string | null, email: string | null, reason:
 }
 
 // 注册审核：approve 通过（可修改注册信息），reject 拒绝（删除账户并记录理由与用户快照）
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 export default defineEventHandler(async (event) => {
   const operator = event.context.user
 
@@ -154,6 +155,12 @@ export default defineEventHandler(async (event) => {
 
     await notifyApproved(typeof updateData.name === 'string' ? updateData.name : targetUser.name, targetUser.email)
 
+    await recordAdminAudit(event, 'user.approval', {
+      targetType: 'user',
+      targetId: userIdNumber,
+      summary: { username: targetUser.username, result: 'approve' }
+    })
+
     return {
       success: true,
       message: '注册审核通过'
@@ -185,6 +192,12 @@ export default defineEventHandler(async (event) => {
   })
 
   await notifyRejected(targetUser.name, targetUser.email, rejectReason)
+
+  await recordAdminAudit(event, 'user.approval', {
+    targetType: 'user',
+    targetId: userIdNumber,
+    summary: { username: targetUser.username, result: 'reject', reason: rejectReason }
+  })
 
   return {
     success: true,

@@ -10,6 +10,7 @@ import {
 } from '~~/server/utils/permission-admin'
 import { collectCodeHolders } from '~~/server/utils/permission-policy'
 import { PROTECTED_PRIV_CODES } from '~~/app/utils/admin-permissions'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 // 保存角色权限模板：整表替换，缺省角色回落内置模板；安全阀在写库前拦截自锁与最后一个持有者
 export default defineEventHandler(async (event) => {
@@ -32,6 +33,10 @@ export default defineEventHandler(async (event) => {
         operatorId
       )
       await saveRolePermissionTemplates(nextTemplates, tx)
+    })
+    await recordAdminAudit(event, 'permission.matrix-update', {
+      targetType: 'permission',
+      summary: { roleKeys: Object.keys(nextTemplates ?? {}) }
     })
     return { success: true, matrix: await buildPermissionMatrix() }
   } catch (error: any) {

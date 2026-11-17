@@ -14,10 +14,20 @@ import {
   assertAccountCredentialsWithinOperator,
   assertAccountPermissionExpansion,
   assertProtectedCodesAfterAccountChange,
+  assertSuperAdminCountAfterAccountChange,
+  assertSuperAdminRoleChangeAllowed,
+  recordSuperAdminRoleChange,
   withPermissionTransaction
 } from '~~/server/utils/permission-admin'
-import { canAssignRole, getRoleTemplateKeys, hasAdminPermission } from '~~/app/utils/admin-permissions'
+import {
+  SUPER_ADMIN_ROLE,
+  canAssignRole,
+  getRoleTemplateKeys,
+  hasAdminPermission,
+  isSuperAdminRoleTransition
+} from '~~/app/utils/admin-permissions'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 const normalizeRequiredText = (value: unknown) => String(value || '').trim()
 const normalizeOptionalText = (value: unknown) => {
@@ -134,6 +144,9 @@ export default defineEventHandler(async (event) => {
         validRole = role
       }
 
+      // 超管身份的授予或撤销只能由现有超管执行，且需处于二次验证窗口内
+      await assertSuperAdminRoleChangeAllowed(event, user, targetUser.role, validRole)
+
       // 验证status字段的有效性
       if (status && !['active', 'withdrawn', 'graduate'].includes(status)) {
         throw createError({
@@ -155,15 +168,12 @@ export default defineEventHandler(async (event) => {
       const { permissions: targetPermissions } = targetUser
       const nextStatus = status && status !== targetUser.status ? status : targetUser.status
       if (validRole !== targetUser.role || nextStatus !== targetUser.status) {
-        await assertProtectedCodesAfterAccountChange(
-          userIdNum,
+        const nextRow =
           nextStatus === 'active'
             ? { id: userIdNum, role: validRole, permissions: targetPermissions }
-            : null,
-          user.id,
-          tx,
-          templates
-        )
+            : null
+        await assertProtectedCodesAfterAccountChange(userIdNum, nextRow, user.id, tx, templates)
+        await assertSuperAdminCountAfterAccountChange(userIdNum, nextRow, tx)
       }
 
       assertAccountPermissionExpansion(
@@ -253,6 +263,7 @@ export default defineEventHandler(async (event) => {
       return {
         updatedUser: updatedUser[0]!,
         targetId: targetUser.id,
+        operator: { id: user.id, name: user.name, username: user.username },
         oldRole: targetUser.role,
         newRole: validRole
       }
@@ -266,6 +277,25 @@ export default defineEventHandler(async (event) => {
         `您的账户权限已由系统更新：${oldRoleName} → ${newRoleName}`
       )
     }
+    // 超管身份变更需给全体超管留痕，事务提交后再写审计与通知
+    if (isSuperAdminRoleTransition(result.oldRole, result.newRole)) {
+      await recordSuperAdminRoleChange(
+        event,
+        result.operator,
+        { id: result.targetId, username: result.updatedUser.username },
+        result.newRole === SUPER_ADMIN_ROLE
+      )
+    }
+
+    await recordAdminAudit(event, 'user.update', {
+      targetType: 'user',
+      targetId: result.targetId,
+      summary: {
+        username: result.updatedUser?.username,
+        oldRole: result.oldRole,
+        newRole: result.newRole
+      }
+    })
     return { success: true, user: result.updatedUser, message: '用户更新成功' }
   } catch (error: any) {
     console.error('更新用户失败:', error)

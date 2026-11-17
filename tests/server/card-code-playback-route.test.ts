@@ -30,7 +30,8 @@ const modules: Record<string, string> = {
     export const restoreCardCodeAfterScheduleRemoval=(...args)=>globalThis.__cardPlaybackFixture.transition('RESTORE',...args);`,
   '~~/server/utils/scheduleReplayBinding': `export const restoreReplayRequestsToPending=(args)=>globalThis.__cardPlaybackFixture.restoreReplay(args);`,
   '~~/server/services/notificationService': `export const createSongPlayedNotifications=(ids)=>globalThis.__cardPlaybackFixture.notify('USER',ids);`,
-  '~~/server/services/astrbotGroupService': `export const enqueueAstrbotGroupEvent=(...args)=>globalThis.__cardPlaybackFixture.notify('GROUP',args);`
+  '~~/server/services/astrbotGroupService': `export const enqueueAstrbotGroupEvent=(...args)=>globalThis.__cardPlaybackFixture.notify('GROUP',args);`,
+  '~~/server/utils/admin-audit': `export const ADMIN_AUDIT_RESULT={SUCCESS:'SUCCESS',FAILURE:'FAILURE'}; export const recordAdminAudit=async()=>{};`
 }
 
 async function loadHandler(kind: string) {

@@ -527,7 +527,9 @@ test('test-github 接口在目标被改动时拒绝复用已存令牌，不发�
     resolveBackupTestParams: loadCredentials({ github: savedGithub }),
     checkGitRepoAccess: async (params: any) => { calls.push(params.apiBase) },
     normalizeGitApiMode: (mode: any) => mode || 'github',
-    assertSafeOutboundUrl: async () => {}
+    assertSafeOutboundUrl: async () => {},
+    recordAdminAudit: async () => {},
+    ADMIN_AUDIT_RESULT: { SUCCESS: 'SUCCESS', FAILURE: 'FAILURE' }
   })
 
   const error = await handler({ body: { apiBase: 'http://127.0.0.1:9999', repo: 'voicehub/backups' } }).catch((item: any) => item)
@@ -619,7 +621,8 @@ test('启用 Git 备份但缺 API 地址时保存被拒；令牌留空保留已�
       assertSafeOutboundUrl: async () => {},
       buildRepoFilePath: gitClient.buildRepoFilePath,
       parseGitRepo: gitClient.parseGitRepo,
-      getServerDate: () => new Date('2026-11-03T00:00:00Z')
+      getServerDate: () => new Date('2026-11-03T00:00:00Z'),
+      recordAdminAudit: async () => {}
     })
     return { handler, writes }
   }

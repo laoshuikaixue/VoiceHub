@@ -3,46 +3,57 @@ import { notificationSettings, users } from '~/drizzle/schema'
 import { and, eq, inArray, isNotNull, ne } from 'drizzle-orm'
 import { getSiteTitle } from '~~/server/utils/siteUtils'
 
+const MEOW_API_BASE = 'https://api.chuckfang.com'
+/** MeoW 自定义分类名，去除首尾空白后最多 10 个字 */
+const MEOW_CATEGORY = 'VoiceHub'
+
+export interface MeowSendResult {
+  ok: boolean
+  /** 业务状态码：400 参数错误、403 内容策略、404 昵称未注册、429 频率超限、500 服务器错误 */
+  bizStatus?: number
+  msg?: string
+}
+
 /**
- * 发送 MeoW 通知
+ * 发送 MeoW 通知（POST JSON）
+ * MeoW 的 HTTP 响应状态统一为 200，成败必须读响应 JSON 的 status 字段
  */
-async function sendMeowNotification(
+export async function sendMeowNotification(
   meowNickname: string,
   title: string,
   message: string,
   url?: string
-): Promise<boolean> {
+): Promise<MeowSendResult> {
   try {
-    // URL 编码参数
-    const encodedNickname = encodeURIComponent(meowNickname)
-    const encodedTitle = encodeURIComponent(title)
-    const encodedMessage = encodeURIComponent(message)
-
-    // 构建请求 URL
-    let meowUrl = `https://api.chuckfang.com/${encodedNickname}/${encodedTitle}/${encodedMessage}`
-
-    if (url) {
-      meowUrl += `?url=${encodeURIComponent(url)}`
-    }
-
-    const response = await fetch(meowUrl, {
-      method: 'GET',
+    const response = await fetch(`${MEOW_API_BASE}/${encodeURIComponent(meowNickname)}`, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'User-Agent': 'VoiceHub-Notification-Service'
-      }
+      },
+      body: JSON.stringify({
+        title,
+        msg: message,
+        ...(url ? { url } : {}),
+        category: MEOW_CATEGORY
+      })
     })
 
-    if (response.ok) {
-      const result = await response.json()
-      console.log('MeoW 通知发送成功:', result)
-      return true
-    } else {
-      console.error('MeoW 通知发送失败:', response.status, response.statusText)
-      return false
+    if (!response.ok) {
+      console.error('MeoW 推送 HTTP 请求失败:', response.status, response.statusText)
+      return { ok: false }
     }
+
+    const result = await response.json().catch(() => null)
+    if (result?.status === 200) {
+      return { ok: true, bizStatus: 200, msg: result.msg }
+    }
+
+    console.error('MeoW 推送失败:', result?.status, result?.msg)
+    return { ok: false, bizStatus: result?.status, msg: result?.msg }
   } catch (error) {
     console.error('发送 MeoW 通知时出错:', error)
-    return false
+    return { ok: false }
   }
 }
 
@@ -118,7 +129,13 @@ export async function sendMeowNotificationToUser(
     }
 
     // 发送 MeoW 通知
-    return await sendMeowNotification(user.meowNickname, fullTitle, enhancedMessage, url)
+    const sendResult = await sendMeowNotification(
+      user.meowNickname,
+      fullTitle,
+      enhancedMessage,
+      url
+    )
+    return sendResult.ok
   } catch (error) {
     console.error('发送用户 MeoW 通知失败:', error)
     return false
@@ -179,40 +196,59 @@ export async function sendBatchMeowNotifications(
     meowIdCounts.set(user.meowNickname!, count + 1)
   })
 
-  // 并发发送通知（限制并发数）
+  // 按 MeoW ID 分组合并：一个 ID 绑定多个账号时只推送一次，避免触发每昵称 3 秒 1 条限流
+  const groupMap = new Map<string, string[]>()
+  usersWithMeow.forEach((user) => {
+    // 关闭通知的用户计入失败，保持统计口径不变
+    const userSettings = userNotificationSettingsMap.get(user.id)
+    if (userSettings && !userSettings.enabled) {
+      failed++
+      return
+    }
+
+    // 如果该 MeoW ID 绑定了多个用户，在消息中加上用户名备注
+    let enhancedMessage = notificationMessage
+    const userCount = meowIdCounts.get(user.meowNickname!)
+    if (userCount && userCount > 1) {
+      // 检查消息是否以"您"开头，如果是则替换，否则添加前缀
+      if (notificationMessage.startsWith('您')) {
+        enhancedMessage = `您（${user.name}）${notificationMessage.substring(1)}`
+      } else {
+        enhancedMessage = `您（${user.name}）${notificationMessage}`
+      }
+    }
+
+    const messages = groupMap.get(user.meowNickname!)
+    if (messages) {
+      messages.push(enhancedMessage)
+    } else {
+      groupMap.set(user.meowNickname!, [enhancedMessage])
+    }
+  })
+
+  const groups = [...groupMap.entries()].map(([nickname, messages]) => ({
+    nickname,
+    message: messages.join('\n'),
+    userCount: messages.length
+  }))
+
+  // 并发发送通知（限制并发数），按用户数计成功/失败
   const batchSize = 5
-  for (let i = 0; i < usersWithMeow.length; i += batchSize) {
-    const batch = usersWithMeow.slice(i, i + batchSize)
+  for (let i = 0; i < groups.length; i += batchSize) {
+    const batch = groups.slice(i, i + batchSize)
 
-    const promises = batch.map(async (user) => {
-      // 检查用户是否启用了通知
-      const userSettings = userNotificationSettingsMap.get(user.id)
-      if (userSettings && !userSettings.enabled) {
-        return false
-      }
-
-      // 如果该 MeoW ID 绑定了多个用户，在消息中加上用户名备注
-      let enhancedMessage = notificationMessage
-      const userCount = meowIdCounts.get(user.meowNickname!)
-      if (userCount && userCount > 1) {
-        // 检查消息是否以"您"开头，如果是则替换，否则添加前缀
-        if (notificationMessage.startsWith('您')) {
-          enhancedMessage = `您（${user.name}）${notificationMessage.substring(1)}`
-        } else {
-          enhancedMessage = `您（${user.name}）${notificationMessage}`
-        }
-      }
-
-      return await sendMeowNotification(user.meowNickname!, fullTitle, enhancedMessage, url)
+    const promises = batch.map(async (group) => {
+      const result = await sendMeowNotification(group.nickname, fullTitle, group.message, url)
+      return { ok: result.ok, userCount: group.userCount }
     })
 
     const results = await Promise.allSettled(promises)
 
     results.forEach((result) => {
-      if (result.status === 'fulfilled' && result.value) {
-        success++
+      if (result.status === 'fulfilled' && result.value.ok) {
+        success += result.value.userCount
       } else {
-        failed++
+        failed += result.status === 'fulfilled' ? result.value.userCount : 1
       }
     })
   }

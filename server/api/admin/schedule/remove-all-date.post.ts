@@ -6,6 +6,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 // 回滚辅助接口：仅删除指定批次创建的排期，并可恢复被覆盖的草稿
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const scheduleIds = Array.isArray(body?.scheduleIds)
@@ -36,6 +37,12 @@ export default defineEventHandler(async (event) => {
       })))
     }
     return deleted
+  })
+
+  await recordAdminAudit(event, 'schedule.remove-all-date', {
+    targetType: 'schedule',
+    targetId: `batch:${result.length}`,
+    summary: { removed: result.length, restored: restoreSchedules.length }
   })
 
   return { success: true, removed: result.length, restored: restoreSchedules.length }

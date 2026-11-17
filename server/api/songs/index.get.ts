@@ -684,7 +684,7 @@ export default defineEventHandler(async (event) => {
       availableSemesters = semesterRows.map((row: any) => String(row.semester)).filter(Boolean)
     }
 
-    // 管理员扩展信息：统计每位投稿人的投稿次数与播出次数（按已播出的排期条目计）
+    // 管理员扩展信息：统计每位投稿人的投稿次数与播出次数（播出按已播放歌曲的正式排期条目计）
     const requesterStatsMap = new Map<number, { submissionCount: number; playCount: number }>()
     if (isAdmin) {
       const requesterIds = [
@@ -707,12 +707,11 @@ export default defineEventHandler(async (event) => {
           SELECT
             s."requesterId",
             COUNT(DISTINCT s.id)::int AS "submissionCount",
-            COUNT(sch.id)::int AS "playCount"
+            COUNT(sch.id) FILTER (WHERE s.played)::int AS "playCount"
           FROM "Song" s
           LEFT JOIN "Schedule" sch
             ON sch."songId" = s.id
             AND sch."isDraft" = false
-            AND sch.played = true
           WHERE s."requesterId" = ANY($1::int[])${semesterCondition}
           GROUP BY s."requesterId"
         `,

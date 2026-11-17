@@ -3,6 +3,7 @@ import { db } from '~/drizzle/db'
 import { schedules, songBlacklists, songs, votes, requestTimes } from '~/drizzle/schema'
 import { eq, sql } from 'drizzle-orm'
 import { createSongRejectedNotification } from '../../../services/notificationService'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -118,6 +119,17 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log(`歌曲驳回操作完成: ${body.songId}`)
+
+    await recordAdminAudit(event, 'song.reject', {
+      targetType: 'song',
+      targetId: body.songId,
+      summary: {
+        title: result.deletedSong?.title,
+        artist: result.deletedSong?.artist,
+        reason: body.reason.trim(),
+        addedToBlacklist: body.addToBlacklist
+      }
+    })
 
     return {
       success: true,

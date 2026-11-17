@@ -4,6 +4,7 @@ import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBi
 import { getServerDate } from '~~/server/utils/serverTime'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -111,6 +112,16 @@ export default defineEventHandler(async (event) => {
       }
 
       return deletedSchedule
+    })
+
+    await recordAdminAudit(event, 'schedule.remove', {
+      targetType: 'schedule',
+      targetId: scheduleIdNumber,
+      summary: {
+        songId: existingSchedule.songId,
+        title: existingSchedule.songTitle,
+        isDraft: existingSchedule.isDraft
+      }
     })
 
     return {

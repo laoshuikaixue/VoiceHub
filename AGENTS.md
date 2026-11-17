@@ -25,6 +25,8 @@ VoiceHub — Nuxt 4 校园广播站点歌管理系统。
 - 项目未开启组件自动导入，模板中使用的自定义组件（含 `Icon`）必须在 `<script setup>` 中显式导入；漏导入不会报错，会被渲染成无内容的原生未知标签（如 `<icon>`），表现为占位但不显示
 - 下拉选择统一复用 `~/components/UI/Common/CustomSelect.vue`；多选使用其 `multiple` 模式，禁止为普通业务配置新增原生 `<select>`
 - 状态管理用 Composables，不用 Pinia
+- 颜色类名以 `nuxt.config.ts` 的 `theme.colors` 键为准：键已是 `bg-primary-40`、`border-secondary`、`text-tertiary` 这类带语义前缀的完整名，使用时再加 UnoCSS 前缀（如 `bg-bg-primary-40`、`border-border-secondary`）。新增颜色前先在该文件确认键存在，拼错不会报错，只会静默不生成 CSS
+- 承载文字的交互控件（按钮、输入框、下拉）背景必须与其所在卡片有可见差异：深色主题下面板为 `--bg-secondary-40`（比主色亮一档），控件用 `bg-bg-primary-40`（比面板更暗）会显得没有背景；这类控件统一用实色层级 `bg-bg-tertiary`，悬停 `hover:bg-bg-quaternary`
 
 ### 2.3. 后端
 - 导入: 项目根目录（如 `server/`）用 `~~/`，app 目录用 `~/`（`~/` 即 `app/`）；drizzle 位于 `app/drizzle/`，服务端导入必须写 `~/drizzle/db`、`~/drizzle/schema`，禁止 `~~/drizzle/...`（静态检查不报错，部署构建解析失败）

@@ -1,4 +1,9 @@
-import { MUSIC_SOURCE_PLATFORMS } from '~~/server/config/constants'
+import {
+  MUSIC_SOURCE_PLATFORMS,
+  DEFAULT_API_LOG_LEVEL,
+  DEFAULT_API_LOG_RETENTION_DAYS,
+  DEFAULT_AUDIT_LOG_RETENTION_DAYS
+} from '~~/server/config/constants'
 import { DEFAULT_ASTRBOT_GROUP_EVENTS, DEFAULT_ASTRBOT_GROUP_THROTTLE } from '~~/server/utils/astrbot-group'
 import { DEFAULT_ASTRBOT_WEEKLY_CONFIG } from '~~/server/utils/astrbot-weekly-config'
 
@@ -126,6 +131,10 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   platformOrder: JSON.stringify([...MUSIC_SOURCE_PLATFORMS]),
   // 角色权限模板：null 表示使用 app/utils/admin-permissions 内置默认模板
   rolePermissionTemplates: null,
+  // 日志管理：API 访问日志级别与数据库日志保留天数（0 = 永久保留）
+  apiLogLevel: DEFAULT_API_LOG_LEVEL,
+  apiLogRetentionDays: DEFAULT_API_LOG_RETENTION_DAYS,
+  auditLogRetentionDays: DEFAULT_AUDIT_LOG_RETENTION_DAYS,
 }
 
 export const PUBLIC_SETTINGS_FIELDS = [

@@ -6,6 +6,7 @@ import { redeemCardCodeForSchedule } from '~~/server/services/cardCodeLifecycleS
 import { fulfillReplayRequestsForSchedule, resolveScheduleReplayBindings } from '~~/server/utils/scheduleReplayBinding'
 import { assertSchedulePlacement } from '~~/server/utils/schedulePlacementConstraint'
 import { getServerDate } from '~~/server/utils/serverTime'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -173,6 +174,16 @@ export default defineEventHandler(async (event) => {
     }
 
     const publishedSchedule = publishResult.schedule
+
+    await recordAdminAudit(event, 'schedule.publish', {
+      targetType: 'schedule',
+      targetId: publishedSchedule.id,
+      summary: {
+        songId: draft.song.id,
+        title: draft.song.title,
+        playDate: publishedSchedule.playDate
+      }
+    })
 
     return {
       ...draft,

@@ -90,7 +90,7 @@ async function bundleModule<T>(entry: string, fetcher: (request: Request) => unk
   const mocks: Record<string, string> = {
     '~/utils/musicSources': 'const sources=[{id:"netease-backup-1",baseUrl:"/netease"},{id:"netease-gdstudio",baseUrl:"/gd"},{id:"vkeys",baseUrl:"/qq"},{id:"bilibili",baseUrl:"/bili"}]; export const MUSIC_SOURCE_CONFIG={primarySource:sources[0].id};export const getEnabledSources=()=>sources;export const getSourceById=id=>sources.find(x=>x.id===id);export const getVkeysIdParam=(platform,id)=>({key:"id",value:id})',
     '~/utils/bilibiliSource': 'export const getBilibiliTrackUrl=async()=>({url:"https://bili.example/audio"});export const searchBilibili=()=>{};export const parseBilibiliId=id=>({bvid:id})',
-    '~/utils/lyric/lyricMatchQuality': 'export const evaluateLyricDataMatch=()=>{}',
+    '~/utils/lyric/lyricMatchQuality': 'export const evaluateLyricDataMatch=()=>{};export const hasWordTiming=()=>true',
     '~/utils/invalidPlaybackUrls': 'export const isPlaybackUrlInvalid=()=>false',
     './useLyricSettings': 'export const useLyricSettings=()=>({})',
     './usePlatformConfig': 'export const usePlatformConfig=()=>({enabledPlatforms:{value:["netease","tencent","bilibili"]}})',

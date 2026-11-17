@@ -16,11 +16,14 @@
         role="switch"
         :aria-checked="enabled"
         :disabled="masterOff"
-        :class="[enabled ? 'bg-primary' : 'bg-panel-bg-compact', masterOff ? 'opacity-40 cursor-not-allowed' : '']"
-        class="relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ml-3"
+        :class="[
+          'relative inline-flex h-5 w-10 shrink-0 items-center rounded-full transition-colors duration-200 ml-3',
+          enabled ? 'bg-primary' : 'bg-bg-tertiary',
+          masterOff ? 'opacity-40 cursor-not-allowed' : ''
+        ]"
         @click="toggle"
       >
-        <span :class="enabled ? 'translate-x-4' : 'translate-x-0.5'" class="inline-block h-4 w-4 rounded-full bg-panel-bg-raised shadow-sm transition-transform duration-200 mt-0.5" />
+        <span :class="['pointer-events-none absolute top-1 h-3 w-3 rounded-full bg-bg-secondary shadow-sm transition-all duration-200', enabled ? 'left-6' : 'left-1']" />
       </button>
     </div>
 

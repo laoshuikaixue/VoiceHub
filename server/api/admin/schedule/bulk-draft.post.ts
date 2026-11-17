@@ -54,6 +54,7 @@ function parseScheduleItems(value: unknown): ScheduleItem[] {
   })
 }
 
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 export default defineEventHandler(async (event) => {
   const user = event.context.user
 
@@ -203,6 +204,12 @@ export default defineEventHandler(async (event) => {
     }
 
     return scheduleItems.length
+  })
+
+  await recordAdminAudit(event, 'schedule.bulk-draft', {
+    targetType: 'schedule',
+    targetId: `batch:${result}`,
+    summary: { count: result, playDate, playTimeId: playTimeId ?? null }
   })
 
   return {

@@ -19,6 +19,20 @@ const cache = new Map<string, { expires: number; result: any }>()
 const resolving = new Map<string, Promise<any>>()
 const CACHE_SIZE = 200
 
+// 加密音频格式浏览器无法解码，命中即跳过该候选继续尝试其它音质/插件
+const ENCRYPTED_AUDIO_EXTENSIONS = new Set([
+  '.mgg', '.mflac', '.mgg1', '.mflac1', '.qmc0', '.qmc3', '.qmcflac', '.qmcogg',
+  '.tkm', '.tkmflac', '.tkmogg', '.bkcmp3', '.bkcflac', '.bkcwma', '.bkcwav', '.bkcape',
+  '.ncm', '.kgm', '.kgma', '.vpr', '.kwm'
+])
+const isEncryptedAudioUrl = (url: string) => {
+  try {
+    const path = new URL(url).pathname.toLowerCase()
+    const dot = path.lastIndexOf('.')
+    return dot >= 0 && ENCRYPTED_AUDIO_EXTENSIONS.has(path.slice(dot))
+  } catch { return false }
+}
+
 export async function enabledCatalog(catalog?: string | null) {
   if (!catalog || !(MUSIC_SOURCE_PLATFORMS as readonly string[]).includes(catalog)) return true
   const settings = await getSystemSettingsCached()
@@ -169,13 +183,16 @@ export async function resolvePlugins(track: PluginTrack, quality: string, exclud
             const desired = artifact.capability.protocol === 'lx' ? ({ standard: '128k', high: '320k', super: 'flac', lossless: 'flac24bit' }[quality] || '320k') : quality
             const levels = artifact.capability.protocol === 'lx' ? artifact.capability.sources[source]?.qualities || [] : ['standard', 'high', 'super', 'lossless']
             const q = levels.includes(desired) ? desired : levels.includes('320k') ? '320k' : levels[0] || desired
-            for (const candidateQuality of [...new Set([q, artifact.capability.protocol === 'lx' ? '128k' : 'standard'])]) {
+            // 音质降级链：请求档 → 320k → 128k，低档可能返回加密格式而高档是普通音频
+            const candidates = artifact.capability.protocol === 'lx' ? [q, '320k', '128k'] : [q, 'standard']
+            for (const candidateQuality of [...new Set(candidates)]) {
               if (levels.length && !levels.includes(candidateQuality)) continue
               try {
                 const result = await call(artifact, 'musicUrl', { item, source, quality: candidateQuality }, budget)
                 const url = typeof result === 'string' ? result : result?.url
                 if (typeof url !== 'string' || !url) continue
                 networkUrl(url)
+                if (isEncryptedAudioUrl(url)) continue
                 const headers = result?.headers || (result?.userAgent ? { 'User-Agent': result.userAgent } : {})
                 if (!headers || typeof headers !== 'object' || Array.isArray(headers) || JSON.stringify(headers).length > 12000) continue
                 return { url, headers, quality: candidateQuality }
@@ -202,7 +219,9 @@ export async function resolvePlugins(track: PluginTrack, quality: string, exclud
       if ((error as any)?.statusCode === 503) continue
       const old = failures.get(resolverId)
       const count = (old?.count || 0) + 1
-      failures.set(resolverId, { count, until: count >= 3 ? getServerTimestamp() + 30000 : 0 })
+      const blocked = count >= 3
+      failures.set(resolverId, { count, until: blocked ? getServerTimestamp() + 30000 : 0 })
+      console.warn(`[插件音源] ${row.name} 解析失败（${count}/3）${blocked ? '，触发 30 秒熔断' : ''}:`, (error as any)?.data?.code || (error as Error)?.message || error)
       while (failures.size > 100) failures.delete(failures.keys().next().value!)
     }
   }

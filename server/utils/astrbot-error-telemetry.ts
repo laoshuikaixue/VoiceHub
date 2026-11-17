@@ -34,16 +34,8 @@ const CREDENTIAL_PATTERNS: RegExp[] = [
  * Returns:
  *     已脱敏并截断的摘要；空值时返回「未知错误」。
  */
-export function sanitizeAstrbotErrorDetail(detail: unknown): string {
-  const text = typeof detail === 'string'
-    ? detail
-    : detail instanceof Error
-      ? detail.message
-      : detail === null || detail === undefined
-        ? ''
-        : String(detail)
-
-  let safe = text.trim()
+export function redactCredentialPatterns(text: string): string {
+  let safe = text
   for (const pattern of CREDENTIAL_PATTERNS) {
     safe = safe.replace(pattern, (match, prefix?: string) => {
       // 连接串保留 scheme:// 与 @，只抹掉用户名口令，便于定位主机又不见凭据
@@ -53,6 +45,19 @@ export function sanitizeAstrbotErrorDetail(detail: unknown): string {
       return '[已脱敏]'
     })
   }
+  return safe
+}
+
+export function sanitizeAstrbotErrorDetail(detail: unknown): string {
+  const text = typeof detail === 'string'
+    ? detail
+    : detail instanceof Error
+      ? detail.message
+      : detail === null || detail === undefined
+        ? ''
+        : String(detail)
+
+  let safe = redactCredentialPatterns(text.trim())
   safe = safe.replace(/\s+/g, ' ').trim()
 
   if (!safe) return '未知错误'

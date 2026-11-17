@@ -45,6 +45,12 @@ export default defineEventHandler(async (event) => {
     console.warn(`[plugin-media] 回源失败 ${response.statusCode || 0}: ${(() => { try { return new URL(ticket.url).hostname } catch { return 'unknown' } })()}`)
     response.destroy(); throw pluginError('PLUGIN_RESOLVE_FAILED')
   }
+  // 上游用 200 + HTML/JSON 错误页冒充音频时直接失败，交给播放器换源而不是解码报错
+  const upstreamType = String(response.headers['content-type'] || '')
+  if (/^(text\/html|application\/json)/i.test(upstreamType)) {
+    console.warn(`[plugin-media] 上游返回非音频内容: ${upstreamType}`)
+    response.destroy(); throw pluginError('PLUGIN_RESOLVE_FAILED')
+  }
   setResponseStatus(event, response.statusCode!)
   for (const name of ['content-type', 'content-length', 'content-range', 'accept-ranges']) {
     const value = response.headers[name]

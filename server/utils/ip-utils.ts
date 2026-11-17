@@ -70,7 +70,8 @@ function getRemoteAddress(event: H3Event): string | null {
   return raw ? normalizeIPCandidate(raw) : null
 }
 
-function isPrivateOrLoopbackAddress(ip: string): boolean {
+/** 判断是否为私网或回环地址（此类地址传给第三方接口无意义） */
+export function isPrivateOrLoopbackAddress(ip: string): boolean {
   if (ip === '::1') return true
   if (
     ip.startsWith('127.') ||

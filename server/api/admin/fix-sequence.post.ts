@@ -2,6 +2,7 @@ import { db } from '~/drizzle/db'
 import { sql } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { ADMIN_AUDIT_RESULT, recordAdminAudit } from '~~/server/utils/admin-audit'
 
 function getFirstRow<T>(result: any): T | undefined {
   return result?.rows?.[0] ?? result?.[0]
@@ -202,6 +203,18 @@ export default defineEventHandler(async (event) => {
         }
       }
 
+      await recordAdminAudit(event, 'database.fix-sequence', {
+        targetType: 'database',
+        targetId: 'all',
+        summary: {
+          total: supportedTables.length,
+          fixed: fixedCount,
+          skipped: skippedCount,
+          errors: errorCount
+        },
+        result: hasError ? ADMIN_AUDIT_RESULT.FAILURE : ADMIN_AUDIT_RESULT.SUCCESS
+      })
+
       return {
         success: !hasError,
         message: hasError ? `序列修复完成，但有 ${errorCount} 个表失败` : `所有表序列修复完成`,
@@ -225,7 +238,20 @@ export default defineEventHandler(async (event) => {
     const dbTableName = tableNameMap[table]
 
     // 使用辅助函数修复单个表
-    return await fixTableSequence(table, dbTableName)
+    const fixResult = await fixTableSequence(table, dbTableName)
+    await recordAdminAudit(event, 'database.fix-sequence', {
+      targetType: 'database',
+      targetId: table,
+      summary: {
+        sequenceName: fixResult.data?.sequenceName,
+        oldSequenceValue: fixResult.data?.oldSequenceValue,
+        newSequenceValue: fixResult.data?.newSequenceValue,
+        skipped: fixResult.data?.skipped,
+        error: fixResult.error
+      },
+      result: fixResult.success ? ADMIN_AUDIT_RESULT.SUCCESS : ADMIN_AUDIT_RESULT.FAILURE
+    })
+    return fixResult
   } catch (error) {
     if ((error as any).statusCode) throw error
     console.error('修复序列失败:', error)

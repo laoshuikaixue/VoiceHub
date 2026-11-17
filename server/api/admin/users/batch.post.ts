@@ -1,10 +1,15 @@
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { canAssignRole, getRoleTemplateKeys } from '~~/app/utils/admin-permissions'
+import {
+  SUPER_ADMIN_ROLE,
+  canAssignRole,
+  getRoleTemplateKeys
+} from '~~/app/utils/admin-permissions'
 import {
   assertAccountPermissionExpansion,
   withPermissionTransaction
 } from '~~/server/utils/permission-admin'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import bcrypt from 'bcryptjs'
 import { db } from '~/drizzle/db'
 import { users } from '~/drizzle/schema'
@@ -153,6 +158,17 @@ export default defineEventHandler(async (event) => {
       })
       continue
     }
+    // 超管身份不参与批量导入，需在用户管理中逐个经二次验证提升，避免明文口令表格扩散全站权限
+    if (userData.role === SUPER_ADMIN_ROLE) {
+      results.failed++
+      results.errors.push({
+        index: userData.index,
+        username: userData.username,
+        name: userData.name,
+        reason: '超级管理员不支持批量导入，请在用户管理中单个提升'
+      })
+      continue
+    }
     usersToInsertData.push(userData)
   }
 
@@ -230,6 +246,22 @@ export default defineEventHandler(async (event) => {
         reason: error.message || '数据库批量写入失败'
       })
     }
+  }
+
+  if (results.created > 0) {
+    await recordAdminAudit(event, 'user.batch-create', {
+      targetType: 'user',
+      summary: {
+        created: results.created,
+        failed: results.failed,
+        // 前端按 50 条分批提交，带上批次标识才能把同一次导入的多条记录归组
+        importBatchId: typeof body.importBatchId === 'string' ? body.importBatchId : null,
+        batchIndex: Number.isInteger(body.batchIndex) ? body.batchIndex : null,
+        batchTotal: Number.isInteger(body.batchTotal) ? body.batchTotal : null,
+        // 摘要数组由审计层截到 20 项，此处同步避免给出错误的完整名单预期
+        usernames: usersToInsertData.map((item) => item.username).slice(0, 20)
+      }
+    })
   }
 
   return results

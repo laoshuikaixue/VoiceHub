@@ -6,6 +6,7 @@ import { setDefaultPlayTime } from '~~/server/utils/play-time-default'
 import { isDeadlockDetected, isUniqueViolation } from '~~/server/utils/db-errors'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   // 获取请求体
@@ -98,6 +99,18 @@ export default defineEventHandler(async (event) => {
 
       await setDefaultPlayTime(tx, created.id)
       return { ...created, isDefault: true }
+    })
+
+    await recordAdminAudit(event, 'play-time.create', {
+      targetType: 'play-time',
+      targetId: newPlayTime?.id,
+      summary: {
+        name: newPlayTime?.name,
+        startTime: newPlayTime?.startTime,
+        endTime: newPlayTime?.endTime,
+        enabled: newPlayTime?.enabled,
+        isDefault: newPlayTime?.isDefault
+      }
     })
 
     return newPlayTime

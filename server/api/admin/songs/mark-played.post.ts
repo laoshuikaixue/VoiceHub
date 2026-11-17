@@ -15,6 +15,7 @@ const markPlayedSchema = z.object({
   unmark: z.boolean().optional()
 })
 
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const validatedDataResult = markPlayedSchema.safeParse(body)
@@ -125,6 +126,12 @@ export default defineEventHandler(async (event) => {
       }
     })())
   }
+
+  await recordAdminAudit(event, isUnmark ? 'song.unmark-played' : 'song.mark-played', {
+    targetType: 'song',
+    targetId: `batch:${updatedSongIds.length}`,
+    summary: { count: updatedSongIds.length, songIds: updatedSongIds }
+  })
 
   return {
     message: isUnmark ? '歌曲已成功撤回已播放状态' : '歌曲已成功标记为已播放',

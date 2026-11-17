@@ -421,6 +421,13 @@
       "when": 1793448074583,
       "tag": "20261031120114_add_permission_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1794059064730,
+      "tag": "20261107134424_admin_audit_logs_and_log_settings",
+      "breakpoints": true
     }
   ]
 }

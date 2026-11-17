@@ -1,9 +1,11 @@
 import {
   assertAccountPermissionExpansion,
   assertProtectedCodesAfterAccountChange,
+  assertSuperAdminCountAfterAccountChange,
   withPermissionTransaction
 } from '~~/server/utils/permission-admin'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { z } from 'zod'
@@ -198,6 +200,12 @@ export default defineEventHandler(async (event) => {
               tx,
               templates
             )
+            // 停用超管同样不得让活跃超管归零
+            await assertSuperAdminCountAfterAccountChange(
+              freshTarget.id,
+              updateData.status === 'active' ? nextState : null,
+              tx
+            )
           }
           // 更新用户信息
           const updatedUserResult = await tx
@@ -257,6 +265,18 @@ export default defineEventHandler(async (event) => {
     // 如果有部分失败，调整消息
     if (errors.length > 0) {
       response.message = `批量更新部分完成，成功更新 ${updateResults.length} 个用户，${errors.length} 个用户更新失败`
+    }
+
+    if (updateResults.length > 0) {
+      await recordAdminAudit(event, 'user.batch-update', {
+        targetType: 'user',
+        targetId: `batch:${updateResults.length}`,
+        summary: {
+          success: updateResults.length,
+          failed: errors.length,
+          fields: [...new Set(updates.flatMap((update: any) => Object.keys(update).filter((key) => key !== 'userId')))]
+        }
+      })
     }
 
     return response

@@ -1,6 +1,18 @@
 import { db } from '~/drizzle/db'
 import { apiKeys, apiLogs } from '~/drizzle/schema'
 import { and, count, desc, eq, gte, like, lte, or, sql } from 'drizzle-orm'
+import { getLogSettings } from '~~/server/utils/log-retention'
+import { createTtlCache } from '~~/server/utils/ttl-cache'
+import { shouldRecordApiLog, type ApiLogLevel } from '~~/server/utils/log-settings'
+
+const CACHE_TTL_MS = 60 * 1000
+
+// 记录级别缓存：避免开放 API 请求热路径上每次都读系统设置
+const getApiLogLevel = createTtlCache<ApiLogLevel>(
+  async () => (await getLogSettings()).apiLogLevel,
+  'all',
+  CACHE_TTL_MS
+)
 
 /**
  * API访问日志服务
@@ -23,6 +35,10 @@ export class ApiLogService {
     errorMessage?: string
   }) {
     try {
+      // 记录级别：off 关闭；errors 仅在失败请求时记录；all 全部记录
+      const level = await getApiLogLevel()
+      if (!shouldRecordApiLog(level, logData.statusCode)) return
+
       console.log(`[ApiLogService] 记录API访问日志:`, {
         endpoint: logData.endpoint,
         method: logData.method,

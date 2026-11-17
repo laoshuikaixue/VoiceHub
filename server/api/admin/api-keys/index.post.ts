@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getBeijingTime } from '~/utils/timeUtils'
 import { apiPermissionSchema } from './permissions'
 import { generateApiKey, hashApiKey } from '~~/server/utils/apiKeyUtils'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 /**
  * 创建API Key
@@ -124,6 +125,18 @@ export default defineEventHandler(async (event) => {
         usageCount: 0,
         createdBy: user.id,
         creatorName: user.name
+      }
+    })
+
+    // 明文密钥只在响应里返回一次，审计摘要只记录前缀与权限
+    await recordAdminAudit(event, 'api-key.create', {
+      targetType: 'api-key',
+      targetId: result.id,
+      summary: {
+        name: validatedData.name,
+        keyPrefix,
+        expiresAt,
+        permissions: validatedData.permissions
       }
     })
 

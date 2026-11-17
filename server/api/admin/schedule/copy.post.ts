@@ -4,6 +4,7 @@ import { schedules, songs } from '~/drizzle/schema'
 import { getClientIP } from '~~/server/utils/ip-utils'
 import { getServerDate } from '~~/server/utils/serverTime'
 
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const clientIP = getClientIP(event)
@@ -136,6 +137,12 @@ export default defineEventHandler(async (event) => {
   })
 
   console.log(`[Performance] 复制排期耗时: ${Date.now() - startTime}ms`)
+
+  await recordAdminAudit(event, 'schedule.copy', {
+    targetType: 'schedule',
+    targetId: `batch:${copyResult.copiedCount ?? 0}`,
+    summary: { fromDate, toDate, copiedCount: copyResult.copiedCount ?? 0, replacedDrafts: (copyResult.replacedDrafts ?? []).length }
+  })
 
   return {
     success: true,

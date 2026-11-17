@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { semesters } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -50,6 +51,12 @@ export default defineEventHandler(async (event) => {
     })
     .returning()
   const semester = semesterResult[0]
+
+  await recordAdminAudit(event, 'semester.create', {
+    targetType: 'semester',
+    targetId: semester?.id,
+    summary: { name, isActive: semester?.isActive }
+  })
 
   return semester
 })

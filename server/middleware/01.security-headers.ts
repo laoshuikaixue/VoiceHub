@@ -6,7 +6,8 @@ export default defineEventHandler((event: H3Event) => {
   setHeader(event, 'X-Frame-Options', 'SAMEORIGIN')
   setHeader(event, 'Referrer-Policy', 'strict-origin-when-cross-origin')
   setHeader(event, 'Cross-Origin-Opener-Policy', 'same-origin')
-  setHeader(event, 'Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()')
+  // 听歌识曲需要本站申请麦克风权限，跨源页面仍禁止使用。
+  setHeader(event, 'Permissions-Policy', 'geolocation=(), microphone=(self), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()')
 
   // HSTS 仅在 HTTPS（经代理或直连）下下发，避免本地 http 开发环境被浏览器强制跳 https
   const forwardedProto = getHeader(event, 'x-forwarded-proto')?.split(',')[0]?.trim()

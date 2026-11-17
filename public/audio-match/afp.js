@@ -26,8 +26,8 @@ globalThis.b64encode = function b64encode(data) {
     return btoa(String.fromCharCode(...data));
 }
 // https://fn.music.163.com/g/chrome-extension-home-page-beta/
-let AudioFingerprintRuntime = (() => {
-    var n, o = void 0 !== o ? o : {},i = {};
+let AudioFingerprintRuntime = ((options = {}) => {
+    var n, o = options,i = {};
     for (n in o)
         o.hasOwnProperty(n) && (i[n] = o[n]);
     var read_, readSync, readBinary, c, f, l = [],
@@ -1497,9 +1497,11 @@ let AudioFingerprintRuntime = (() => {
                         return WebAssembly.instantiate(e, import_table)
                     })).then((function(t) {
                         return t
-                    })).then(e, (function(t) {
-                        g("failed to asynchronously prepare wasm: " + t,Q),
-                            abort(t)
+                    })).then(e).catch((function(t) {
+                        g("failed to asynchronously prepare wasm: " + t,Q);
+                        // 初始化失败由外层 Promise 接收，避免未处理的异步异常。
+                        if (o.onAbort) o.onAbort(t);
+                        else abort(t)
                     }))
                 }
                 if (J++,
@@ -1594,20 +1596,32 @@ let AudioFingerprintRuntime = (() => {
     return o;
 })
 
-// 注意：在 PythonMonkey 环境中，所需的模块
-// 在函数调用后会被销毁（？）
-// 这可能不是实际发生的情况，但
-// 目前每次生成指纹时都会重新加载整个 WASM 模块作为临时解决方案
+// 缓存成功初始化的引擎，失败后允许重新加载。
 let cachedRuntimePromise = null;
-function instantiateRuntime(){
+function instantiateRuntime() {
     if (cachedRuntimePromise) return cachedRuntimePromise;
-    return cachedRuntimePromise = new Promise((resolve, reject) => {
-        var fpRuntime = AudioFingerprintRuntime()
-        var monitor = setInterval(() => {
-            if (typeof fpRuntime.ExtractQueryFP == "function") 
-                clearInterval(monitor) || resolve(fpRuntime)
-        }, 100) 
-    })
+    cachedRuntimePromise = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Fingerprint runtime initialization timed out')), 10000);
+        try {
+            AudioFingerprintRuntime({
+                onRuntimeInitialized() {
+                    clearTimeout(timeout);
+                    resolve(this);
+                },
+                onAbort(reason) {
+                    clearTimeout(timeout);
+                    reject(new Error(String(reason)));
+                }
+            });
+        } catch (err) {
+            clearTimeout(timeout);
+            reject(err);
+        }
+    }).catch((err) => {
+        cachedRuntimePromise = null;
+        throw err;
+    });
+    return cachedRuntimePromise;
 }
 
 function GenerateFP(floatArray) {
@@ -1615,11 +1629,15 @@ function GenerateFP(floatArray) {
     console.info('[afp] input samples n=', PCMBuffer.length)    
     return instantiateRuntime().then((fpRuntime) => {
         console.info('[afp] begin fingerprinting')
-        let fp_vector = fpRuntime.ExtractQueryFP(PCMBuffer.buffer)        
-        let result_buf = new Uint8Array(fp_vector.size());
-        for (let t = 0; t < fp_vector.size(); t++)
-            result_buf[t] = fp_vector.get(t);
-        return globalThis.b64encode(result_buf)
+        let fp_vector = fpRuntime.ExtractQueryFP(PCMBuffer.slice().buffer)
+        try {
+            let result_buf = new Uint8Array(fp_vector.size());
+            for (let t = 0; t < fp_vector.size(); t++)
+                result_buf[t] = fp_vector.get(t);
+            return globalThis.b64encode(result_buf)
+        } finally {
+            fp_vector.delete();
+        }
     });
 }
 

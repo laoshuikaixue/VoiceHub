@@ -2,6 +2,7 @@ import { db, songReplayRequests, songs } from '~/drizzle/db'
 import { eq, and } from 'drizzle-orm'
 import { createReplayRequestRejectedNotification } from '~~/server/services/notificationService'
 
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const { songId } = body
@@ -43,6 +44,12 @@ export default defineEventHandler(async (event) => {
       }
     )
   }
+
+  await recordAdminAudit(event, 'replay.reject', {
+    targetType: 'replay-request',
+    targetId: songId,
+    summary: { title: song.title, rejected: pendingRequests.length }
+  })
 
   return { success: true }
 })

@@ -1,5 +1,6 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { deleteCardCodesByIds } from '~~/server/services/cardCodeDeleteService'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 const parseIds = (body: any): number[] => {
   const rawIds = Array.isArray(body?.ids) ? body.ids : body?.id !== undefined ? [body.id] : []
@@ -23,6 +24,16 @@ export default defineEventHandler(async (event) => {
 
   try {
     const deletedRows = await deleteCardCodesByIds(ids)
+
+    await recordAdminAudit(event, 'card-code.delete', {
+      targetType: 'card-code',
+      targetId: `batch:${ids.length}`,
+      summary: {
+        count: deletedRows.length,
+        codes: deletedRows.map((row) => row.code).slice(0, 20)
+      }
+    })
+
     return {
       success: true,
       message: '点歌券删除成功',

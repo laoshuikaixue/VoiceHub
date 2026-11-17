@@ -957,6 +957,10 @@ const restoreBackup = async () => {
       }
     }
     const CHUNK_SIZE = 50
+    // 同一次恢复的批次标识：分片恢复按请求记录审计，靠它把多行归组回一次恢复
+    const restoreBatchId = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `restore-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
     let totalProcessed = 0
     let totalRecords = 0
 
@@ -988,6 +992,7 @@ const restoreBackup = async () => {
             tableName,
             records: chunk,
             mappings,
+            restoreBatchId,
             mode: restoreForm.value.mode,
             overwriteSuperAdmin: restoreForm.value.overwriteSuperAdmin,
             hasSuperAdminInBackup: fileHasSuperAdmin

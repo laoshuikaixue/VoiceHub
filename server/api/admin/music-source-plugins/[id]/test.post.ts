@@ -4,6 +4,7 @@ import { runPlugin } from '~~/server/utils/music-source-plugins/runtime'
 import { unseal } from '~~/server/utils/music-source-plugins/tickets'
 import { pluginError } from '~~/server/utils/music-source-plugins/errors'
 import { getServerTimestamp } from '~~/server/utils/serverTime'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   await pluginAccess(event, true)
@@ -14,5 +15,10 @@ export default defineEventHandler(async (event) => {
   const revision = await pluginRevision(row.id, artifact.revision)
   const started = getServerTimestamp()
   const { capability } = await runPlugin({ source: artifact.source, protocol: artifact.protocol, prelude: await prelude(), variables: unseal(revision.variables, 'variables') })
+  await recordAdminAudit(event, 'plugin.test', {
+    targetType: 'plugin',
+    targetId: row.id,
+    summary: { revision: artifact.revision, protocol: capability.protocol }
+  })
   return { success: true, elapsed: getServerTimestamp() - started, protocol: capability.protocol, revision: artifact.revision }
 })

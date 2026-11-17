@@ -644,7 +644,7 @@ VoiceHub 实现了细粒度的权限控制系统：
 
 #### 角色类型
 
-- **超级管理员 (SUPER_ADMIN)**：拥有所有系统权限，包括用户管理、系统设置中的凭据与策略配置、备份恢复、数据库管理等
+- **超级管理员 (SUPER_ADMIN)**：拥有所有系统权限，包括用户管理、系统设置中的凭据与策略配置、备份恢复、数据库管理等。可由现有超级管理员在用户管理中授予或撤销，活跃的超级管理员上限 3 个、至少保留 1 个，不参与批量导入
 - **管理员 (ADMIN)**：内容与用户日常管理权限，包括用户管理、排期管理、歌曲管理、点歌券、数据分析，以及投稿与播放限制、限额、卡密、音源平台等运营配置
 - **歌曲管理员 (SONG_ADMIN)**：专门负责歌曲相关管理，包括排期管理、歌曲管理、打印排期等
 - **普通用户 (USER)**：基本的点歌、投票和查看权限
@@ -667,6 +667,15 @@ VoiceHub 实现了细粒度的权限控制系统：
 - 前端基于角色动态显示界面元素和菜单
 - 后端API进行严格的权限验证
 - 支持页面级和功能级的权限控制
+
+#### 敏感操作二次验证
+
+- 授予或撤销超级管理员身份时，操作者需重新验证凭据：口令与验证器动态码二选一，账号已绑定验证器时默认优先动态验证码；单一凭据验证失败不回落另一种凭据
+- 验证通过后在服务端签发短期特权窗口（按场景 + 用户 + 会话绑定，默认 5 分钟），不返回任何客户端令牌，换会话或换场景均不继承
+- 验证场景为封闭白名单（`server/utils/step-up.ts`），后续接入备份恢复、数据库重置等只需追加场景项
+- 验证失败与超管身份变更均写入口令审计流水，并向全体活跃超级管理员推送系统通知
+- 范围限定于超级管理员身份变更：仅停用超管账号或对其施加显式拒绝不会触发验证（数量下限仍会拦住归零）
+- 从备份恢复是例外：恢复任意备份本身等价于最高权限，其中携带的超管账号不受验证与数量上限约束，恢复后需人工核对超管名单
 
 ## 环境变量说明
 
@@ -757,6 +766,9 @@ VoiceHub/
 │   │   │   └── SocialBindings.vue     # 社交账号绑定
 │   │   ├── Admin/             # 管理员功能组件
 │   │   │   ├── ApiKeyManager.vue      # API密钥管理
+│   │   │   ├── AuditLogPanel.vue      # 管理员操作审计面板
+│   │   │   ├── LogManagement.vue      # 日志管理（级别/保留天数/查询导出清理）
+│   │   │   ├── LogTable.vue           # 日志表格容器（表头/加载态/空状态）
 │   │   │   ├── BackupAutoSettings.vue # 自动备份设置
 │   │   │   ├── BackupManager.vue      # 数据库备份管理
 │   │   │   ├── BatchUpdateModal.vue   # 批量更新模态框
@@ -796,6 +808,7 @@ VoiceHub/
 │   │   │   ├── SongManagement.vue     # 歌曲管理
 │   │   │   ├── SongSourceReplaceModal.vue # 歌曲换源弹窗（跨音源搜索与替换）
 │   │   │   ├── SubmissionRemarkDialog.vue # 投稿备注弹窗
+│   │   │   ├── StepUpDialog.vue     # 敏感操作二次验证弹窗
 │   │   │   ├── UserManager.vue        # 用户管理
 │   │   │   ├── UserApprovalModal.vue  # 用户注册审核弹窗
 │   │   │   ├── UserExportModal.vue    # 用户导出弹窗
@@ -933,6 +946,7 @@ VoiceHub/
 │   │   ├── useSongPlayer.ts    # 歌曲播放器hooks
 │   │   ├── useSchedulePlaylistSync.ts # 本标签页排期保存后的队列刷新与生命周期
 │   │   ├── useSongs.ts         # 歌曲管理hooks
+│   │   ├── useStepUp.ts        # 敏感操作二次验证弹窗编排hooks
 │   │   ├── useSyncedTime.ts    # 服务器时间对时hooks
 │   │   ├── useTheme.ts         # 主题管理
 │   │   ├── useThemeImage.ts    # 主题图片获取
@@ -1061,6 +1075,10 @@ VoiceHub/
 │   │   │   │   ├── index.post.ts    # 创建API密钥
 │   │   │   │   ├── logs.get.ts      # API使用日志
 │   │   │   │   └── permissions.ts   # API密钥权限定义
+│   │   │   ├── audit-logs/          # 管理员操作审计API
+│   │   │   │   ├── export.get.ts    # 导出审计日志（CSV/JSONL）
+│   │   │   │   ├── index.get.ts     # 获取审计日志列表
+│   │   │   │   └── stats.get.ts     # 获取审计日志统计
 │   │   │   ├── backup/              # 备份管理API
 │   │   │   │   ├── delete/          # 删除备份子目录
 │   │   │   │   │   └── [filename].delete.ts
@@ -1095,6 +1113,12 @@ VoiceHub/
 │   │   │   │   ├── initialize.post.ts # 从现有用户提取初始化
 │   │   │   │   ├── index.get.ts     # 获取配置列表
 │   │   │   │   └── index.post.ts    # 新增配置项
+│   │   │   ├── log-management/      # 日志管理API
+│   │   │   │   ├── access/          # API 访问日志子目录
+│   │   │   │   │   └── export.get.ts # 导出访问日志（CSV/JSONL）
+│   │   │   │   ├── access.get.ts    # 获取 API 访问日志列表
+│   │   │   │   ├── cleanup.post.ts  # 按保留天数清理过期日志
+│   │   │   │   └── stats.get.ts     # 获取日志统计
 │   │   │   ├── card-codes/          # 点歌券管理API
 │   │   │   │   ├── [id].put.ts      # 更新单张点歌券
 │   │   │   │   ├── assignments.get.ts # 派发记录查询
@@ -1258,6 +1282,7 @@ VoiceHub/
 │   │   │   ├── register.post.ts       # 用户名密码注册
 │   │   │   ├── reset-password.post.ts # 重置密码
 │   │   │   ├── set-initial-password.post.ts # 设置初始密码
+│   │   │   ├── step-up.post.ts    # 敏感操作二次验证（签发短期特权窗口）
 │   │   │   ├── unbind.post.ts        # 解绑社交账号
 │   │   │   └── verify.get.ts        # 验证Token并获取用户信息
 │   │   ├── bilibili/       # Bilibili相关API
@@ -1436,6 +1461,7 @@ VoiceHub/
 │   │   ├── error-handler.ts # 错误处理插件
 │   │   ├── redis-lifecycle.ts # Redis短期状态连接生命周期
 │   │   ├── custom-css.ts   # 自定义 CSS 注入插件
+│   │   ├── log-retention.ts # 数据库日志定期清理
 │   │   └── statistics-code.ts # 站点统计代码注入插件
 │   ├── services/           # 业务服务层
 │   │   ├── apiLogService.ts # API日志服务
@@ -1456,6 +1482,7 @@ VoiceHub/
 │   │   ├── systemBoardService.ts # 系统看板数据聚合服务
 │   │   └── userService.ts # 用户服务
 │   ├── utils/              # 服务端工具函数
+│   │   ├── admin-audit.ts # 管理员操作审计记录（脱敏摘要、静默失败）
 │   │   ├── admin-password-policy.ts # 管理员重置密码基础校验策略
 │   │   ├── admin-permission-routes.ts # 后台接口权限守卫表
 │   │   ├── admin-settings-scope.ts # 模块配置权限与字段白名单
@@ -1497,7 +1524,11 @@ VoiceHub/
 │   │   ├── permission-admin.ts # 权限矩阵数据层
 │   │   ├── permission-policy.ts # 权限模板/显式授权校验与安全阀纯策略
 │   │   ├── jwt-enhanced.ts # JWT工具
+│   │   ├── log-export.ts   # 日志导出（CSV 转义防公式注入 / JSONL）
 │   │   ├── log-manager.ts  # 日志管理工具
+│   │   ├── log-query.ts    # 日志列表与导出的共用筛选条件（北京日界）
+│   │   ├── log-retention.ts # 数据库日志保留策略与清理
+│   │   ├── log-settings.ts # 日志级别与保留天数规范化
 │   │   ├── music-source-plugins/ # LX Music 与 MusicFree 音源插件运行时、沙箱与凭证管理
 │   │   │   ├── access.ts    # 后台权限、同源校验与调用限流
 │   │   │   ├── backup.ts    # 插件表备份清单与恢复写入
@@ -1550,6 +1581,7 @@ VoiceHub/
 │   │   ├── serverTime.ts   # 服务器时间工具
 │   │   ├── sequence-sync.ts # 自增序列同步工具
 │   │   ├── siteUtils.ts    # 站点工具函数
+│   │   ├── step-up.ts        # 敏感操作二次验证窗口与场景白名单
 │   │   ├── studentMask.ts  # 学生隐私工具
 │   │   ├── submissionLimit.ts # 投稿限额工具
 │   │   ├── submission-restriction-policy.ts # 重复投稿限制模式判定

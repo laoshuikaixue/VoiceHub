@@ -7,6 +7,7 @@ import { fulfillReplayRequestsForSchedule, parseScheduleReplayRequestId, resolve
 import { assertSchedulePlacement } from '~~/server/utils/schedulePlacementConstraint'
 import { getServerDate } from '~~/server/utils/serverTime'
 
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 export default defineEventHandler(async (event) => {
   const user = event.context.user
 
@@ -194,6 +195,12 @@ export default defineEventHandler(async (event) => {
     }
 
     const schedule = transactionResult.schedule
+
+    await recordAdminAudit(event, isDraft ? 'schedule.draft' : 'schedule.publish', {
+      targetType: 'schedule',
+      targetId: schedule.id,
+      summary: { songId: body.songId, playDate: schedule.playDate, legacy: true }
+    })
 
     return {
       ...schedule,

@@ -23,11 +23,13 @@
                 type="button"
                 role="switch"
                 :aria-checked="masterEnabled"
-                :class="masterEnabled ? 'bg-primary' : 'bg-panel-bg-compact'"
-                class="relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors duration-200"
+                :class="[
+                  'relative inline-flex h-5 w-10 shrink-0 items-center rounded-full transition-colors duration-200',
+                  masterEnabled ? 'bg-primary' : 'bg-bg-tertiary'
+                ]"
                 @click="masterEnabled = !masterEnabled"
               >
-                <span :class="masterEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'" class="inline-block h-5 w-5 rounded-full bg-panel-bg-raised shadow-sm transition-transform duration-200 mt-0.5" />
+                <span :class="['pointer-events-none absolute top-1 h-3 w-3 rounded-full bg-bg-secondary shadow-sm transition-all duration-200', masterEnabled ? 'left-6' : 'left-1']" />
               </button>
             </div>
           </div>

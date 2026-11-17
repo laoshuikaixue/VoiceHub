@@ -45,7 +45,7 @@
               v-if="loading"
               class="flex flex-col items-center justify-center py-20 text-text-tertiary"
             >
-              <Icon name="refresh" :size="48" class="animate-spin mb-4 text-primary" />
+              <AppSpinner :size="48" class="mb-4" />
               <p class="font-black uppercase tracking-widest text-[10px]">{{ locale.loadingPrograms }}</p>
             </div>
 
@@ -228,6 +228,7 @@ const { songs: songsLocale } = useLocale()
 const locale = computed(() => songsLocale.value?.mediaModals || {})
 import { getCoverThumbUrl } from '~/utils/url'
 import Icon from '~/components/UI/Icon.vue'
+import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import { normalizeForMatch as normalizeString } from '~/utils/song-name-normalize'
 
 const props = defineProps({

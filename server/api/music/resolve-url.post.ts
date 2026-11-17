@@ -8,8 +8,6 @@ import {
   resolveQqSdkPlayUrl
 } from '~~/server/utils/qq_music_sdk'
 
-const HYW_TX_URL = 'http://103.79.184.97/api/music/url'
-const HYW_CARD_KEY = 'PYPW-QFRL-3DBF-95O6'
 const YUAFENG_TX_URL = 'https://api-v2.yuafeng.cn/API/qqmusic.php'
 const YUAFENG_TX_APIKEY = '3ff23523e47465224a3f48579acf41f241540ce04b6cc0b94164f37a5b6299d5'
 const HELLOWORLD_TX_URL = 'https://a.aa.cab/qq.music'
@@ -34,35 +32,6 @@ const extractTxAudioUrl = (payload: unknown): string => {
 }
 
 const isValidTxAudioUrl = (url: string) => /^https?:\/\//i.test(url) && !url.includes(INVALID_QQ_AUDIO_URL_SUFFIX)
-
-const resolveTxWithHyw = async (songmid: string, quality: unknown) => {
-  const qualityMap: Record<string, string> = {
-    '4': '128k',
-    '8': '320k',
-    '10': 'flac',
-    '11': 'master',
-    '14': 'master'
-  }
-  const query = new URLSearchParams({
-    source: 'tx',
-    songId: songmid,
-    songmid,
-    platform: 'tx',
-    quality: qualityMap[String(quality)] || String(quality || '128k'),
-    key: HYW_CARD_KEY
-  })
-  const response = await fetch(`${HYW_TX_URL}?${query.toString()}`, {
-    signal: AbortSignal.timeout(8000),
-    headers: { Accept: 'application/json', 'X-Card-Key': HYW_CARD_KEY }
-  })
-  if (!response.ok) throw new Error(`HYW 返回 ${response.status}`)
-  const data: any = await response.json()
-  const url = typeof data?.url === 'string' ? data.url.trim() : ''
-  if (data?.code !== 200 || !/^https?:\/\//i.test(url)) {
-    throw new Error(data?.message || 'HYW 未返回播放链接')
-  }
-  return upgradeTxAudioUrl(url)
-}
 
 const resolveTxWithYuafeng = async (songmid: string, quality: unknown) => {
   const typeMap: Record<string, string> = {
@@ -109,10 +78,9 @@ export default defineEventHandler(async (event) => {
   const musicId = body?.musicId
   const playUrl = String(body?.playUrl || '').trim()
   const cookie = normalizeQqCookie(String(body?.cookie || '').trim())
-  // official-first：QQ 官方 Cookie 链路；aggregator：内置聚合源兜底链；fallback：第三方兜底链路
+  // official-first：QQ 官方 Cookie 链路；其余（含旧客户端 fallback）统一走聚合源链
   const rawStrategy = String(body?.strategy || '')
-  const strategy =
-    rawStrategy === 'official-first' ? 'official-first' : rawStrategy === 'aggregator' ? 'aggregator' : 'fallback'
+  const strategy = rawStrategy === 'official-first' ? 'official-first' : 'aggregator'
   const excludedSources = new Set(
     Array.isArray(body?.excludeSources)
       ? body.excludeSources.map((item: unknown) => String(item || '').trim()).filter(Boolean)
@@ -251,25 +219,6 @@ export default defineEventHandler(async (event) => {
         cookie: activeCookie
       }
     }
-  }
-
-  if (excludedSources.has('hyw-tx')) {
-    throw createError({ statusCode: 502, message: 'QQ 音乐播放链接解析失败' })
-  }
-
-  try {
-    const url = await resolveTxWithHyw(resolvedMusicId, body?.quality)
-    return {
-      success: true,
-      url,
-      source: 'hyw-tx',
-      normalizedMusicId: resolvedMusicId,
-      idType: 'songmid',
-      authUsed: Boolean(cookie),
-      authDiagnostic: getQqCookieDiagnostic(cookie)
-    }
-  } catch (error: any) {
-    console.warn('[music/resolve-url] HYW QQ 回退失败:', error?.message || error)
   }
 
   throw createError({

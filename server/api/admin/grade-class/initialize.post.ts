@@ -2,11 +2,12 @@ import { defineEventHandler } from 'h3'
 import { and, eq, isNotNull } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { gradeClass, users } from '~/drizzle/schema'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 const MAX_BATCH_SIZE = 500
 
 // 从现有用户提取年级班级组合并写入配置（仅 active 用户）
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
   const userCombos = await db
     .selectDistinct({
       grade: users.grade,
@@ -46,6 +47,12 @@ export default defineEventHandler(async () => {
       .returning({ id: gradeClass.id })
     added += inserted.length
   }
+
+  await recordAdminAudit(event, 'grade-class.initialize', {
+    targetType: 'grade-class',
+    targetId: `batch:${added}`,
+    summary: { total: uniquePairs.length, added, skipped: uniquePairs.length - added }
+  })
 
   return {
     success: true,

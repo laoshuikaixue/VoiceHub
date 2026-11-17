@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { semesters } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -33,6 +34,12 @@ export default defineEventHandler(async (event) => {
 
     // 设置指定学期为活跃
     await tx.update(semesters).set({ isActive: true }).where(eq(semesters.id, body.semesterId))
+  })
+
+  await recordAdminAudit(event, 'semester.set-active', {
+    targetType: 'semester',
+    targetId: body.semesterId,
+    summary: { name: semester[0]?.name }
   })
 
   return { message: '活跃学期设置成功' }

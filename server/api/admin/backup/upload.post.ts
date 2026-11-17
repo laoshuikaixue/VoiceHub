@@ -3,6 +3,7 @@ import { promises as fs } from 'fs'
 import path from 'path'
 // @ts-ignore formidable 未随包提供类型声明
 import formidable from 'formidable'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -104,6 +105,12 @@ export default defineEventHandler(async (event) => {
 
     // 获取文件信息
     const stats = await fs.stat(newFilepath)
+
+    await recordAdminAudit(event, 'backup.upload', {
+      targetType: 'backup',
+      targetId: newFilename,
+      summary: { originalFilename: originalName, size: stats.size }
+    })
 
     return {
       success: true,

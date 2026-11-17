@@ -1,4 +1,5 @@
 import { parseTTML, parseYrc } from '@applemusic-like-lyrics/lyric'
+import { toSimplifiedChinese } from '../song-name-normalize'
 import { cleanTTMLTranslations, parseQRCLyric, parseSmartLrc } from './lyricParser'
 
 const MIN_CONTENT_SCORE = 0.82
@@ -46,9 +47,9 @@ export type LyricMatchDecision = {
   metrics: LyricMatchMetrics
 }
 
-/** 归一化歌词正文，仅用于跨来源一致性比较 */
+/** 归一化歌词正文，仅用于跨来源一致性比较；先做繁→简统一，避免网易云简/QQ 繁被当成内容不一致 */
 const normalizeText = (text: string): string =>
-  text
+  toSimplifiedChinese(text)
     .normalize('NFKC')
     .toLowerCase()
     .replace(/[\p{P}\p{S}\s]+/gu, '')
@@ -219,6 +220,21 @@ const alignLines = (
   }
   anchors.reverse()
   return { score: scores[size - 1], anchors }
+}
+
+/**
+ * 判断 YRC/QRC 文本是否含真实逐字时间戳：任一行拆出 ≥ 2 个 word 才算。
+ * 仅行级时间戳的“假逐字”回退到 LRC 等级，防止它跨平台升级时抢占真逐字的升级机会
+ */
+export const hasWordTiming = (raw: string): boolean => {
+  const text = raw?.trim()
+  if (!text) return false
+  try {
+    const lines = (text.startsWith('<') ? parseQRCLyric(text) : parseYrc(text)) as any[] | null
+    return Array.isArray(lines) && lines.some((line) => Array.isArray(line?.words) && line.words.length >= 2)
+  } catch {
+    return false
+  }
 }
 
 /** 检测高阶歌词是否与基准歌词属于同一录音版本 */

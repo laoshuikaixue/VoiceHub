@@ -1,6 +1,7 @@
 import { db } from '~/drizzle/db'
 import { requestTimes } from '~/drizzle/schema'
 import { and, gt, gte, ilike, lt, lte, or } from 'drizzle-orm'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -66,6 +67,17 @@ export default defineEventHandler(async (event) => {
       })
       .returning()
     const newRequestTime = newRequestTimeResult[0]
+
+    await recordAdminAudit(event, 'request-time.create', {
+      targetType: 'request-time',
+      targetId: newRequestTime?.id,
+      summary: {
+        name: newRequestTime?.name,
+        startTime: newRequestTime?.startTime,
+        endTime: newRequestTime?.endTime,
+        enabled: newRequestTime?.enabled
+      }
+    })
 
     return newRequestTime
   } catch (error: any) {

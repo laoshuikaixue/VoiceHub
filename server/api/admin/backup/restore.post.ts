@@ -1,9 +1,11 @@
 import { normalizeSubmittedTemplates } from '~~/server/utils/permission-admin'
 import { normalizePermissionTokens } from '~~/app/utils/admin-permissions'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { defineEventHandler, readBody, readMultipartFormData } from 'h3'
 import { db } from '~/drizzle/db'
 import { pluginClearOrder, restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
 import {
+  adminAuditLogs,
   apiKeyPermissions,
   apiKeys,
   apiLogs,
@@ -174,6 +176,7 @@ export default defineEventHandler(async (event) => {
       console.log('清空现有数据...')
       try {
         if (shouldOverwriteSuperAdmin) {
+          await db.delete(adminAuditLogs)
           await db.delete(apiLogs)
           await db.delete(apiKeyPermissions)
           await db.delete(apiKeys)
@@ -258,6 +261,7 @@ export default defineEventHandler(async (event) => {
             await db.delete(users)
           }
 
+          await db.delete(adminAuditLogs)
           await db.delete(collaborationLogs)
           await db.delete(songCollaborators)
           await db.delete(songReplayRequests)
@@ -300,6 +304,7 @@ export default defineEventHandler(async (event) => {
       'userIdentities',
       'emailTemplates',
       'userStatusLogs',
+      'adminAuditLogs',
       'songBlacklist',
       'cardCodes',
       'songs',
@@ -1333,7 +1338,10 @@ export default defineEventHandler(async (event) => {
                           'legalConsentDocuments',
                           'enabledPlatforms',
                           'platformOrder',
-                          'rolePermissionTemplates'
+                          'rolePermissionTemplates',
+                          'apiLogLevel',
+                          'apiLogRetentionDays',
+                          'auditLogRetentionDays'
                         ]
 
                         // 只添加备份数据中存在的字段
@@ -2546,6 +2554,31 @@ export default defineEventHandler(async (event) => {
                         await tx.insert(apiLogs).values(apiLogData)
                         break
 
+                      case 'adminAuditLogs': {
+                        // 审计日志无外键，按快照恢复；id 不写回，避免影响序列
+                        const auditAction =
+                          typeof record.action === 'string' ? record.action.slice(0, 80) : ''
+                        if (!auditAction) break
+                        await tx.insert(adminAuditLogs).values({
+                          actorId: Number.isInteger(record.actorId) ? record.actorId : null,
+                          actorName: record.actorName || null,
+                          action: auditAction,
+                          targetType: record.targetType
+                            ? String(record.targetType).slice(0, 50)
+                            : null,
+                          targetId:
+                            record.targetId !== null && record.targetId !== undefined
+                              ? String(record.targetId).slice(0, 200)
+                              : null,
+                          summary: record.summary || null,
+                          ipAddress: record.ipAddress || null,
+                          userAgent: record.userAgent || null,
+                          result: record.result === 'FAILURE' ? 'FAILURE' : 'SUCCESS',
+                          createdAt: record.createdAt ? new Date(record.createdAt) : getServerDate()
+                        })
+                        break
+                      }
+
                       // 其他表的处理逻辑...
                       default:
                         console.warn(`暂不支持恢复表: ${tableName}`)
@@ -2685,6 +2718,16 @@ export default defineEventHandler(async (event) => {
       restoreResults.details.warnings = restoreResults.details.warnings || []
       restoreResults.details.warnings.push('重载SMTP配置失败')
     }
+
+    await recordAdminAudit(event, 'backup.restore', {
+      targetType: 'backup',
+      summary: {
+        clearExisting,
+        tablesProcessed: restoreResults.details.tablesProcessed,
+        recordsRestored: restoreResults.details.recordsRestored,
+        errorCount: restoreResults.details.errors.length
+      }
+    })
 
     return restoreResults
   } catch (error: any) {

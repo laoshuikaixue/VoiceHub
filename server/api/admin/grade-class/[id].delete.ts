@@ -4,6 +4,7 @@ import { gradeClass } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))
@@ -13,7 +14,7 @@ export default defineEventHandler(async (event) => {
 
   const existing = await db.query.gradeClass.findFirst({
     where: eq(gradeClass.id, id),
-    columns: { id: true }
+    columns: { id: true, grade: true, class: true }
   })
 
   if (!existing) {
@@ -22,6 +23,12 @@ export default defineEventHandler(async (event) => {
 
   // 仅删除配置行，不触碰任何用户数据
   await db.delete(gradeClass).where(eq(gradeClass.id, id))
+
+  await recordAdminAudit(event, 'grade-class.delete', {
+    targetType: 'grade-class',
+    targetId: id,
+    summary: { grade: existing.grade, class: existing.class }
+  })
 
   return {
     success: true,

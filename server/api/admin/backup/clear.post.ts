@@ -26,6 +26,7 @@ import {
   votes
 } from '~/drizzle/schema'
 import { and, eq, inArray, isNull, ne, notInArray, or } from 'drizzle-orm'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { pluginClearOrder } from '~~/server/utils/music-source-plugins/backup'
 
 export default defineEventHandler(async (event) => {
@@ -182,6 +183,17 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log('✅ 现有数据已清空')
+
+    // 清空会删掉审计表内容（保留超级管理员时按 ID 过滤），记录写在清理之后
+    await recordAdminAudit(event, 'backup.clear', {
+      targetType: 'database',
+      summary: {
+        finalizeTempUser,
+        shouldOverwriteSuperAdmin,
+        preservedSuperAdminCount: preservedSuperAdminIds.length
+      }
+    })
+
     return {
       success: true,
       message: '数据已清空',
