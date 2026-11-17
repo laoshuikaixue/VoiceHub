@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { getClientIP, isPrivateOrLoopbackAddress } from '~~/server/utils/ip-utils'
 
 const neteaseEnhancedApiPromise = import('@neteasecloudmusicapienhanced/api').then((mod) => {
   return (mod.default || {}) as Record<string, (params: Record<string, any>) => Promise<any>>
@@ -162,6 +163,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const params = { ...queryParams, ...bodyParams }
+
+  // 扫码链路透传访客真实 IP，网易云按访客而非服务器出口判定地区
+  if (endpointPath.startsWith('login/qr/')) {
+    // 客户端传入的 realIP 一律丢弃，避免该代理成为任意 IP 伪造入口
+    delete params.realIP
+    const clientIp = getClientIP(event)
+    if (clientIp !== 'unknown' && !isPrivateOrLoopbackAddress(clientIp)) {
+      params.realIP = clientIp
+    }
+  }
 
   // 等待 xeapi 公钥等配置就绪：超时或失败都继续，让上游错误以有界的失败返回，而不是无限等待
   await withDeadline(ensureNcmConfig(), NETEASE_CONFIG_TIMEOUT_MS, 'generateConfig').catch((error: unknown) => {
