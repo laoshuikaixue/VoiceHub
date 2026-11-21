@@ -87,6 +87,10 @@ export const playTimes = pgTable(
     // 默认播出时段：用户投稿未选择时段时自动预选。同一时间最多一个，
     // 由下方部分唯一索引在数据库层兜底，不依赖调用方自觉。
     isDefault: boolean('isDefault').default(false).notNull(),
+    broadcastAutoStart: boolean('broadcastAutoStart').default(false).notNull(),
+    broadcastAutoChangedAt: timestamp('broadcastAutoChangedAt'),
+    broadcastStopAtEnd: boolean('broadcastStopAtEnd').default(false).notNull(),
+    broadcastMarkPlayed: boolean('broadcastMarkPlayed').default(false).notNull(),
   },
   (table) => [
     uniqueIndex('play_time_single_default_unique')
@@ -204,6 +208,27 @@ export const schedules = pgTable('Schedule', {
   index('schedule_published_song_idx').on(table.isDraft, table.songId, table.playDate),
   index('schedule_published_date_idx').on(table.isDraft, table.playDate)
 ]);
+
+// 单一播出端。重复控制和曲目完成事件由数据库事务串行处理。
+export const broadcastPlayback = pgTable('BroadcastPlayback', {
+  id: integer('id').primaryKey(),
+  device: uuid('device').notNull(),
+  userId: integer('userId').notNull(),
+  authSession: text('authSession').notNull(),
+  expiresAt: timestamp('expiresAt').notNull(),
+  armedAt: timestamp('armedAt'),
+  run: uuid('run'),
+  playDate: date('playDate', { mode: 'string' }),
+  slotId: integer('slotId'),
+  queue: jsonb('queue').$type<number[]>(),
+  cursor: integer('cursor').default(0).notNull(),
+});
+
+// 同一天同一时段只触发一次自动开播。手动开播同样占用该时段的自动机会。
+export const broadcastStarts = pgTable('BroadcastStart', {
+  playDate: date('playDate', { mode: 'string' }).notNull(),
+  slotId: integer('slotId').notNull().references(() => playTimes.id, { onDelete: 'cascade' }),
+}, (table) => [primaryKey({ columns: [table.playDate, table.slotId] })]);
 
 // 排期备选池表
 export const scheduleSongPool = pgTable('ScheduleSongPool', {

@@ -4,6 +4,12 @@
 let timeOffset = 0
 let hasSynced = false
 
+export function applyServerTimeSample(timestamp: number, requestStartedAt: number) {
+  const receivedAt = Date.now()
+  timeOffset = timestamp + (receivedAt - requestStartedAt) / 2 - receivedAt
+  hasSynced = true
+}
+
 /**
  * 获取当前修正后的时间戳 (毫秒)
  * 可以在任何地方（包括非 Vue 组件环境）安全调用
@@ -39,13 +45,7 @@ export function useSyncedTime() {
       const data = await $fetch<{ timestamp: number }>('/api/sys/time')
       
       if (data?.timestamp) {
-        const endTime = Date.now()
-        // 估算单向传输延迟
-        const latency = (endTime - startTime) / 2
-        const serverTime = data.timestamp + latency
-        
-        timeOffset = serverTime - endTime
-        hasSynced = true
+        applyServerTimeSample(data.timestamp, startTime)
         
         console.log(`[TimeSync] 时间同步完成，与服务器时间相差 ${timeOffset}ms`)
       }

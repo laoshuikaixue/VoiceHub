@@ -1,0 +1,218 @@
+import { randomUUID } from 'node:crypto'
+import { and, asc, eq, gte, lt, sql } from 'drizzle-orm'
+import { db } from '~/drizzle/db'
+import { broadcastPlayback, broadcastStarts, playTimes, schedules, songs } from '~/drizzle/schema'
+import { getBeijingDateString, getBeijingWeekday, parseToBeijingTime } from '~/utils/timeUtils'
+import { summarizeScheduleDuration } from '~/utils/schedule-duration'
+import { getServerDate } from '~~/server/utils/serverTime'
+import { parseScheduleDateQuery } from '~~/server/utils/schedule-date-query'
+import { slotAppliesToWeekday } from '~~/server/utils/play-slot'
+import { createApiError } from '~~/server/utils/apiError'
+import { SERVER_ERROR_CODES as codes } from '~~/server/config/constants'
+import { updateSongPlayed } from './songPlayedService'
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
+type Slot = typeof playTimes.$inferSelect
+type Lease = typeof broadcastPlayback.$inferSelect
+type Actor = Pick<Lease, 'userId' | 'authSession' | 'device'>
+type BroadcastAudit =
+  | { action: 'playback.unattended-enable' | 'playback.unattended-disable'; reason?: 'page-released'; slotId?: never; date?: never; runId?: never }
+  | { action: 'playback.auto-start' | 'playback.auto-end'; slotId: number | null; date: string | null; runId: string | null; reason?: 'playlist-completed' | 'slot-end' | 'playlist-changed' }
+const LEASE_MS = 12_000
+const START_GRACE_MS = 5_000
+const emptyRun = { run: null, playDate: null, slotId: null, queue: null, cursor: 0 }
+
+export type BroadcastCommand =
+  | { action: 'arm' | 'disarm' | 'release' }
+  | { action: 'heartbeat'; endIfIdle?: boolean }
+  | { action: 'start'; slotId: number }
+  | { action: 'stop'; run: string }
+  | { action: 'advance'; run: string; entryId: number; result: 'completed' | 'skipped' }
+
+export function broadcastUnavailable() {
+  return createApiError(409, codes.BROADCAST_UNAVAILABLE, '播出时段、排期或播出设备状态已变化')
+}
+
+export function broadcastDenied() {
+  return createApiError(403, codes.BROADCAST_ACCESS, '没有播放控制权限')
+}
+
+function broadcastWindow(date: string, slot: Slot) {
+  if (!slot.enabled || !slot.startTime || !slot.endTime || slot.startTime >= slot.endTime ||
+      !slotAppliesToWeekday(slot.weekdays, getBeijingWeekday(date))) return null
+  const start = parseToBeijingTime(`${date} ${slot.startTime}`).getTime()
+  const end = parseToBeijingTime(`${date} ${slot.endTime}`).getTime()
+  return Number.isFinite(start) && Number.isFinite(end) ? { start, end } : null
+}
+
+async function readQueue(source: Tx | typeof db, date: string, slotId: number) {
+  const { startOfDay, endOfDay } = parseScheduleDateQuery(date)!
+  return source.select({
+    id: schedules.id,
+    sequence: schedules.sequence,
+    song: {
+      id: songs.id, title: songs.title, artist: songs.artist, musicPlatform: songs.musicPlatform,
+      musicId: songs.musicId, musicSourceData: songs.musicSourceData, playUrl: songs.playUrl,
+      durationSeconds: songs.durationSeconds, played: songs.played
+    }
+  }).from(schedules).innerJoin(songs, eq(schedules.songId, songs.id))
+    .where(and(eq(schedules.isDraft, false), eq(schedules.playTimeId, slotId),
+      gte(schedules.playDate, startOfDay), lt(schedules.playDate, endOfDay)))
+    .orderBy(asc(schedules.sequence), asc(schedules.createdAt), asc(schedules.id))
+}
+
+function policy(slot: Slot) {
+  return { autoStart: slot.broadcastAutoStart, stopAtEnd: slot.broadcastStopAtEnd, markPlayed: slot.broadcastMarkPlayed }
+}
+
+export async function readBroadcastPage(date: string, slotId: number | undefined) {
+  // 在读列表前即校验日期，包括没有启用时段的站点。
+  parseScheduleDateQuery(date)
+  const slots = await db.select().from(playTimes).orderBy(asc(playTimes.startTime), asc(playTimes.id))
+  const available = slots.flatMap(slot => {
+    const window = broadcastWindow(date, slot)
+    return window ? [{ id: slot.id, name: slot.name, ...window, ...policy(slot) }] : []
+  })
+  const selected = available.find(slot => slot.id === slotId) ?? available[0]
+  const entries = selected ? await readQueue(db, date, selected.id) : []
+  return { slots: available, slotId: selected?.id ?? null, entries, duration: summarizeScheduleDuration(entries), timestamp: getServerDate().getTime() }
+}
+
+async function lockBroadcast(tx: Tx) {
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext('voicehub.broadcast'))`)
+}
+
+export async function saveBroadcastPolicy(
+  slotId: number, input: { autoStart?: boolean; stopAtEnd?: boolean; markPlayed?: boolean }
+) {
+  return db.transaction(async tx => {
+    await lockBroadcast(tx)
+    const slot = await tx.query.playTimes.findFirst({ where: eq(playTimes.id, slotId) })
+    if (!slot?.enabled) throw broadcastUnavailable()
+    const changes: Partial<Slot> = {}
+    if (input.autoStart !== undefined && input.autoStart !== slot.broadcastAutoStart) {
+      changes.broadcastAutoStart = input.autoStart
+      changes.broadcastAutoChangedAt = getServerDate()
+    }
+    if (input.stopAtEnd !== undefined) changes.broadcastStopAtEnd = input.stopAtEnd
+    if (input.markPlayed !== undefined) changes.broadcastMarkPlayed = input.markPlayed
+    if (Object.keys(changes).length) await tx.update(playTimes).set(changes).where(eq(playTimes.id, slotId))
+    return policy({ ...slot, ...changes })
+  })
+}
+
+export async function commandBroadcast(actor: Actor, command: BroadcastCommand, canMark: boolean) {
+  return db.transaction(async tx => {
+    await lockBroadcast(tx)
+    const now = getServerDate()
+    const today = getBeijingDateString(now)
+    const timestamp = now.getTime()
+    const current = await tx.query.broadcastPlayback.findFirst({ where: eq(broadcastPlayback.id, 1) })
+    const valid = current && current.expiresAt > now ? current : null
+    const owned = valid?.device === actor.device && valid.userId === actor.userId && valid.authSession === actor.authSession
+    const audit: BroadcastAudit[] = []
+    const empty = { timestamp, armed: false, expiresAt: null, active: null, updatedSongIds: [] as number[], marked: false, audit }
+    if (!owned && command.action === 'heartbeat') return empty
+    if (!owned && command.action === 'release') return empty
+    if (valid && !owned) throw createApiError(409, codes.BROADCAST_BUSY, '另一台设备正在控制播放')
+    if (!owned && command.action !== 'arm' && command.action !== 'start') throw broadcastUnavailable()
+
+    const lease: Lease = owned ? { ...valid } : { id: 1, ...actor, ...emptyRun, armedAt: null, expiresAt: now }
+    if (command.action === 'release') {
+      if (lease.armedAt) audit.push({ action: 'playback.unattended-disable', reason: 'page-released' })
+      await tx.delete(broadcastPlayback).where(eq(broadcastPlayback.id, 1))
+      return empty
+    }
+
+    if (command.action === 'arm' && !lease.armedAt) {
+      lease.armedAt = now
+      audit.push({ action: 'playback.unattended-enable' })
+    }
+    if (command.action === 'disarm' && lease.armedAt) {
+      lease.armedAt = null
+      audit.push({ action: 'playback.unattended-disable' })
+    }
+    const updatedSongIds: number[] = []
+    let marked = false
+
+    async function start(slot: Slot, automatic: boolean) {
+      const window = broadcastWindow(today, slot)
+      if (!window || window.end <= timestamp) return false
+      const entries = await readQueue(tx, today, slot.id)
+      if (!entries.length) return false
+      const claimed = await tx.insert(broadcastStarts).values({ playDate: today, slotId: slot.id })
+        .onConflictDoNothing().returning({ slotId: broadcastStarts.slotId })
+      if (automatic && !claimed.length) return false
+      const runId = randomUUID()
+      Object.assign(lease, { run: runId, playDate: today, slotId: slot.id, queue: entries.map(entry => entry.id), cursor: 0 })
+      if (automatic) audit.push({ action: 'playback.auto-start', slotId: slot.id, date: today, runId })
+      return true
+    }
+
+    function endAutomatically(reason: 'playlist-completed' | 'slot-end' | 'playlist-changed') {
+      audit.push({ action: 'playback.auto-end', slotId: lease.slotId, date: lease.playDate, runId: lease.run, reason })
+      Object.assign(lease, emptyRun)
+    }
+
+    if (command.action === 'start') {
+      if (lease.run) throw broadcastUnavailable()
+      const slot = await tx.query.playTimes.findFirst({ where: eq(playTimes.id, command.slotId) })
+      if (!slot || !await start(slot, false)) throw broadcastUnavailable()
+    }
+
+    if (command.action === 'stop' || command.action === 'advance') {
+      if (!lease.run || command.run !== lease.run) throw broadcastUnavailable()
+      if (command.action === 'stop') Object.assign(lease, emptyRun)
+    }
+
+    if (command.action === 'heartbeat' && lease.armedAt && !lease.run) {
+      const slots = await tx.select().from(playTimes).where(and(eq(playTimes.broadcastAutoStart, true), eq(playTimes.enabled, true)))
+        .orderBy(asc(playTimes.startTime), asc(playTimes.id))
+      for (const slot of slots) {
+        const window = broadcastWindow(today, slot)
+        if (window && window.start >= lease.armedAt.getTime() && window.start >= (slot.broadcastAutoChangedAt?.getTime() ?? 0) &&
+          timestamp >= window.start && timestamp < window.start + START_GRACE_MS && await start(slot, true)) break
+      }
+    }
+
+    let active = null
+    if (lease.run && lease.slotId && lease.playDate && lease.queue) {
+      const slot = await tx.query.playTimes.findFirst({ where: eq(playTimes.id, lease.slotId) })
+      const window = slot && broadcastWindow(lease.playDate, slot)
+      const entries = window ? await readQueue(tx, lease.playDate, lease.slotId) : []
+      const stable = entries.length === lease.queue.length && entries.every((entry, index) => entry.id === lease.queue![index])
+      if (!slot || !window || !stable) {
+        endAutomatically('playlist-changed')
+      } else if (timestamp >= window.end && (slot.broadcastStopAtEnd || (command.action === 'heartbeat' && command.endIfIdle))) {
+        endAutomatically('slot-end')
+      } else {
+        if (command.action === 'advance') {
+          const entry = entries[lease.cursor]
+          if (!entry || entry.id !== command.entryId) throw broadcastUnavailable()
+          if (command.result === 'completed' && canMark && slot.broadcastMarkPlayed) {
+            updatedSongIds.push(...await updateSongPlayed(tx, [entry.song.id], actor.userId))
+            marked = true
+            entry.song.played = true
+          }
+          lease.cursor++
+          if (lease.cursor >= entries.length || timestamp >= window.end) {
+            if (command.result === 'completed') endAutomatically(lease.cursor >= entries.length ? 'playlist-completed' : 'slot-end')
+            else Object.assign(lease, emptyRun)
+          }
+        }
+        if (lease.run) active = {
+          id: lease.run, date: lease.playDate!, slotId: slot.id, slotName: slot.name, cursor: lease.cursor,
+          entries, duration: summarizeScheduleDuration(entries), ...window, ...policy(slot), closing: timestamp >= window.end
+        }
+      }
+    }
+
+    if (!lease.armedAt && !lease.run) {
+      await tx.delete(broadcastPlayback).where(eq(broadcastPlayback.id, 1))
+      return { ...empty, updatedSongIds, marked }
+    }
+    lease.expiresAt = new Date(timestamp + LEASE_MS)
+    await tx.insert(broadcastPlayback).values(lease).onConflictDoUpdate({ target: broadcastPlayback.id, set: lease })
+    return { timestamp, armed: lease.armedAt !== null, expiresAt: lease.expiresAt.getTime(), active, updatedSongIds, marked, audit }
+  })
+}

@@ -55,6 +55,10 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'songs:bypass-limits',
   'schedule:read',
   'schedule:write',
+  'playback:read',
+  'playback:control',
+  'playback:configure',
+  'playback:mark-played',
   'stats:read',
   'play-times:read',
   'play-times:write',
@@ -118,6 +122,7 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'music-source-plugins:write',
   // 页面码可单独显示入口；显式拒绝页面码可隐藏业务能力派生的入口。
   'page:overview',
+  'page:playback',
   'page:schedule',
   'page:print',
   'page:songs',
@@ -199,6 +204,9 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
     'system:read',
     'schedule:read',
     'schedule:write',
+    'playback:control',
+    'playback:configure',
+    'playback:mark-played',
     'stats:read',
     'play-times:read',
     'play-times:write',
@@ -263,6 +271,7 @@ export const ROLE_PERMISSION_TEMPLATES_DEFAULT: Record<string, readonly string[]
 // 后台页面 ID（侧边栏与 dashboard tab 共用），页面码统一为 `page:<id>`
 export const ADMIN_PAGE_IDS: readonly string[] = [
   'overview',
+  'playback',
   'schedule',
   'print',
   'songs',
@@ -295,6 +304,7 @@ export const PAGE_PERMISSIONS: Record<string, readonly string[]> = Object.fromEn
 export const PERMISSION_READ_DEPENDENCIES: Record<string, readonly string[]> = {
   'songs:read': ['songs:write', 'songs:review', 'songs:delete', 'schedule:read', 'schedule:write'],
   'schedule:read': ['schedule:write'],
+  'playback:read': ['playback:control', 'playback:configure', 'playback:mark-played'],
   'play-times:read': ['play-times:write'],
   'request-times:read': ['request-times:write'],
   'semesters:read': ['semesters:write', 'semesters:delete'],
@@ -318,6 +328,7 @@ export const PERMISSION_READ_DEPENDENCIES: Record<string, readonly string[]> = {
 
 export const ADMIN_PAGE_CAPABILITIES: Record<string, readonly string[]> = {
   overview: ['stats:read', 'activities:read', 'system:read'],
+  playback: ['playback:read'],
   schedule: ['schedule:read', 'replay-requests:read'],
   print: ['schedule:read'],
   songs: ['songs:read'],

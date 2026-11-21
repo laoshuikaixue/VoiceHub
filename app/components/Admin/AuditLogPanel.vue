@@ -112,7 +112,7 @@
         </td>
         <td class="px-4 py-3">
           <span class="inline-block px-2 py-1 rounded-lg bg-bg-tertiary-40 border border-border-secondary text-[11px] font-mono text-text-primary">
-            {{ log.action }}
+            {{ actionLabel(log.action) }}
           </span>
         </td>
         <td class="px-4 py-3 text-xs text-text-primary font-medium">
@@ -183,7 +183,12 @@ const loadError = ref('')
 const page = ref(1)
 const total = ref(0)
 const totalPages = ref(1)
-const actionOptions = ref([])
+const actionCodes = ref([])
+const actionLabel = (action) => {
+  const labels = admin.value.auditLog.actionLabels
+  return Object.hasOwn(labels, action) ? labels[action] : action
+}
+const actionOptions = computed(() => actionCodes.value.map(action => ({ value: action, label: actionLabel(action) })))
 const targetTypeOptions = ref([])
 
 const filters = reactive({
@@ -242,10 +247,7 @@ const loadLogs = async () => {
 const loadOptions = async () => {
   try {
     const response = await $fetch('/api/admin/audit-logs/stats', { ...auth.getAuthConfig() })
-    actionOptions.value = (response.data.byAction || []).map((item) => ({
-      value: item.action,
-      label: item.action
-    }))
+    actionCodes.value = (response.data.byAction || []).map(item => item.action)
     targetTypeOptions.value = (response.data.byTargetType || [])
       .filter((item) => item.targetType)
       .map((item) => ({ value: item.targetType, label: item.targetType }))

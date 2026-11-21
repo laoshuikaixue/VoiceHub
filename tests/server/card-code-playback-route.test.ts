@@ -42,6 +42,9 @@ async function loadHandler(kind: string) {
     banner: { js: `const defineEventHandler=fn=>fn; const readBody=async event=>event.body;
       const createError=options=>Object.assign(new Error(options.message),options);` },
     plugins: [{ name: 'card-playback-route-fixture', setup(builder) {
+      builder.onResolve({ filter: /^~~\/server\/services\/songPlayedService$/ }, () => ({
+        path: fileURLToPath(new URL('../../server/services/songPlayedService.ts', import.meta.url))
+      }))
       builder.onResolve({ filter: /^(drizzle-orm|~\/|~~\/)/ }, (args) => ({ path: args.path, namespace: 'fixture' }))
       builder.onLoad({ filter: /.*/, namespace: 'fixture' }, (args) => {
         if (!modules[args.path]) throw new Error(`未配置依赖: ${args.path}`)

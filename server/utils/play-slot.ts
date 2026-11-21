@@ -1,4 +1,16 @@
 import { getBeijingDateString, getBeijingWeekday } from '~/utils/timeUtils'
+import { getServerDate } from './serverTime'
+
+/** 还原播放策略。恢复时重新起算自动开播的启用时间。 */
+export function readBroadcastPolicyBackup(record: Record<string, unknown>) {
+  return {
+    ...(typeof record.broadcastAutoStart === 'boolean' ? {
+      broadcastAutoStart: record.broadcastAutoStart, broadcastAutoChangedAt: getServerDate()
+    } : {}),
+    ...(typeof record.broadcastStopAtEnd === 'boolean' ? { broadcastStopAtEnd: record.broadcastStopAtEnd } : {}),
+    ...(typeof record.broadcastMarkPlayed === 'boolean' ? { broadcastMarkPlayed: record.broadcastMarkPlayed } : {})
+  }
+}
 
 /**
  * 播出时段「适用星期」与播出日期的判定规则。

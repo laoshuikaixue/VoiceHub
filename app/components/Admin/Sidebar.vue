@@ -118,6 +118,7 @@
 import {
   LayoutDashboard,
   CalendarDays,
+  Radio,
   Printer,
   Music2,
   BarChart3,
@@ -178,6 +179,7 @@ const menuGroups = computed(() => [
   {
     section: locale.value.sections?.content || '内容管理',
     items: [
+      { icon: Radio, label: locale.value.menu?.playback || '播放控制', id: 'playback' },
       { icon: CalendarDays, label: locale.value.menu?.schedule || '排班管理', id: 'schedule' },
       { icon: Printer, label: locale.value.menu?.print || '打印管理', id: 'print' },
       { icon: Music2, label: locale.value.menu?.songs || '点歌管理', id: 'songs' },

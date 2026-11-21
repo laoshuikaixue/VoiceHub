@@ -2084,6 +2084,7 @@ import { convertToHttps, getCoverThumbUrl, getNeteaseCookie } from '~/utils/url'
 import { useLocale } from '~/utils/locale'
 import { useServerErrors } from '~/composables/useLocaleText'
 import { formatDuration, addDaysToString, getDaysBetween } from '~/utils/timeUtils'
+import { summarizeScheduleDuration } from '~/utils/schedule-duration'
 import { BUILTIN_PLATFORMS, getPlatformDisplayName } from '~/utils/platforms'
 import {
   autoSchedule,
@@ -2965,12 +2966,7 @@ const replayRequests = ref([])
 const scheduledSongIds = ref(new Set())
 
 // 已排期歌曲的总时长（秒）
-const scheduledTotalDuration = computed(() => {
-  return localScheduledSongs.value.reduce((sum, s) => {
-    const dur = s.song && typeof s.song.durationSeconds === 'number' ? s.song.durationSeconds : 0
-    return sum + dur
-  }, 0)
-})
+const scheduledTotalDuration = computed(() => summarizeScheduleDuration(localScheduledSongs.value).seconds)
 
 // 计算是否有未发布的草稿
 const hasUnpublishedDrafts = computed(() => {

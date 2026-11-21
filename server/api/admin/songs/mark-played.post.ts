@@ -1,13 +1,7 @@
 import { db } from '~/drizzle/db'
-import { createSongPlayedNotifications } from '~~/server/services/notificationService'
-import { songs, songReplayRequests } from '~/drizzle/schema'
-import { eq, and, inArray } from 'drizzle-orm'
-import { getServerDate } from '~~/server/utils/serverTime'
-import { redeemCardCodeForSchedule, restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import { restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
-import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import { z } from 'zod'
+import { updateSongPlayed, notifySongsPlayed } from '~~/server/services/songPlayedService'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 
 const markPlayedSchema = z.object({
   songId: z.number().optional(),
@@ -15,7 +9,6 @@ const markPlayedSchema = z.object({
   unmark: z.boolean().optional()
 })
 
-import { recordAdminAudit } from '~~/server/utils/admin-audit'
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const validatedDataResult = markPlayedSchema.safeParse(body)
@@ -46,86 +39,9 @@ export default defineEventHandler(async (event) => {
   // 撤回已播放
   const isUnmark = validatedData.unmark === true
 
-  // 过滤需要更新的歌曲
-  const condition = !isUnmark
-    ? and(inArray(songs.id, songIds), eq(songs.played, false))
-    : and(inArray(songs.id, songIds), eq(songs.played, true))
-
-  const { updatedSongsResult, updatedSongIds } = await db.transaction(async (tx) => {
-    const updatedSongsResult = await tx
-      .update(songs)
-      .set({
-        played: !isUnmark,
-        playedAt: isUnmark ? null : getServerDate()
-      })
-      .where(condition)
-      .returning({ id: songs.id, cardCodeId: songs.cardCodeId })
-
-    const updatedSongIds = updatedSongsResult.map((s) => s.id)
-    const operatorId = Number(event.context.user?.id || event.context.apiKey?.createdByUserId)
-    for (const song of updatedSongsResult) {
-      const transition = isUnmark ? restoreCardCodeAfterScheduleRemoval : redeemCardCodeForSchedule
-      await transition(tx, { songId: song.id, cardCodeId: song.cardCodeId, operatorId, at: getServerDate(), cancelPlayback: isUnmark })
-    }
-
-    if (updatedSongIds.length > 0) {
-      if (!isUnmark) {
-        // 标记已播放：履行全部待处理的重播申请
-        const updatedRequests = await tx
-          .update(songReplayRequests)
-          .set({
-            status: 'FULFILLED',
-            updatedAt: getServerDate()
-          })
-          .where(
-            and(
-              inArray(songReplayRequests.songId, updatedSongIds),
-              eq(songReplayRequests.status, 'PENDING')
-            )
-          )
-          .returning({ id: songReplayRequests.id })
-
-        if (updatedRequests.length > 0) {
-          console.log(`将 ${updatedRequests.length} 个重播申请状态更新为 FULFILLED（歌曲已播放）`)
-        }
-      } else {
-        // 撤回已播放：每人仅恢复最新一条，避免违反部分唯一索引
-        const restoredCount = await restoreReplayRequestsToPending({
-          tx,
-          songIds: updatedSongIds,
-          at: getServerDate()
-        })
-
-        if (restoredCount > 0) {
-          console.log(`将 ${restoredCount} 个重播申请状态恢复为 PENDING（撤回已播放）`)
-        }
-      }
-    }
-
-    return { updatedSongsResult, updatedSongIds }
-  })
-
-  // 异步发送通知（同一用户多首歌曲合并为一条）
-  if (!isUnmark && updatedSongIds.length > 0) {
-    event.waitUntil(
-      createSongPlayedNotifications(updatedSongIds).catch((err) => {
-        console.error('发送歌曲已播放通知失败:', err)
-      })
-    )
-    // 群聊推送：歌曲已播放（默认关闭，噪音较大，按需在后台开启）。
-    // 批量标播放时逐首发一条，但同群同事件的合并窗口会把它们并成一条消息。
-    event.waitUntil((async () => {
-      try {
-        const played = await db.select({ title: songs.title, artist: songs.artist })
-          .from(songs).where(inArray(songs.id, updatedSongIds))
-        for (const song of played) {
-          await enqueueAstrbotGroupEvent('songPlayed', '歌曲已播放', `《${song.title}》- ${song.artist} 已播放`)
-        }
-      } catch (err) {
-        console.error('发送群聊已播放通知失败:', err)
-      }
-    })())
-  }
+  const operatorId = Number(event.context.user?.id || event.context.apiKey?.createdByUserId)
+  const updatedSongIds = await db.transaction(tx => updateSongPlayed(tx, songIds, operatorId, isUnmark))
+  if (!isUnmark) notifySongsPlayed(event, updatedSongIds)
 
   await recordAdminAudit(event, isUnmark ? 'song.unmark-played' : 'song.mark-played', {
     targetType: 'song',
@@ -135,7 +51,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     message: isUnmark ? '歌曲已成功撤回已播放状态' : '歌曲已成功标记为已播放',
-    count: updatedSongsResult.length,
+    count: updatedSongIds.length,
     updatedSongIds: updatedSongIds
   }
 })

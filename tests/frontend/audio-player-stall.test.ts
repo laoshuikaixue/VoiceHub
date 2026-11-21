@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 import test from 'node:test'
 import vm from 'node:vm'
 import { nextTick, ref, shallowRef, watch } from 'vue'
-import { isPreviewClipDuration } from '../../app/utils/preview-duration.ts'
+import { isPreviewClipDuration, normalizeDurationSeconds } from '../../app/utils/preview-duration.ts'
 
 const require = createRequire(import.meta.url)
 const { parse, compileScript } = require('vue/compiler-sfc')
@@ -145,7 +145,7 @@ function previewFixture(t) {
   const context = load([
     'getPreviewSongKey', 'sourceRecoveryEpoch', 'badDurationFixTask', 'previewWarnedSongKey',
     'invalidateSourceRecovery', 'isSourceRecoveryCurrent', 'getCurrentFailedSource', 'buildFallbackResolveOptions',
-    'trySwitchPlaybackSource', 'normalizeSongDurationSeconds', 'isPreviewAudio', 'notifyPreviewOnly',
+    'trySwitchPlaybackSource', 'isPreviewAudio', 'notifyPreviewOnly',
     'PREVIEW_RECHECK_TIMEOUT_MS', 'notifyIfStillPreview', 'BAD_DURATION_FIX_TIMEOUT_MS',
     'maybeSwitchForBadDuration', 'handleLoaded'
   ], {
@@ -154,7 +154,7 @@ function previewFixture(t) {
     failedPlaybackSources: ref([]), lastOpenedFallbackSongId: ref(null),
     enhanced: { resetRetryState() {} }, resetNeteaseScrobbleState() {},
     isBilibiliSong: () => false, getQuality: () => 8, getCachedMusicUrlSource: () => 'preview-source',
-    isInvalidTencentAudio: () => false, isPreviewClipDuration,
+    isInvalidTencentAudio: () => false, isPreviewClipDuration, normalizeDurationSeconds,
     PLATFORM_AUTHORIZED_PLATFORMS: ['tencent', 'netease', 'netease-podcast', 'migu'],
     audioPlayerLocale: ref({ previewOnly: '仅试听' }),
     window: { $showNotification: (...args) => notices.push(args) },

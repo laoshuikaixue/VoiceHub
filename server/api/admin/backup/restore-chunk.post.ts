@@ -35,6 +35,7 @@ import { omitMaskedSystemSettingsSecrets } from '~~/server/api/admin/system-sett
 import { restoreAstrbotBindings } from '~~/server/utils/astrbot-backup'
 import { createApiError } from '~~/server/utils/apiError'
 import { clearDefaultPlayTime } from '~~/server/utils/play-time-default'
+import { readBroadcastPolicyBackup } from '~~/server/utils/play-slot'
 import { validateThemeConfig } from '~~/server/utils/theme-config'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { normalizeScheduleVisibilitySettings } from '~~/server/utils/system-settings-defaults'
@@ -676,7 +677,7 @@ export default defineEventHandler(async (event) => {
           }
 
           case 'playTimes': {
-            const playTimeData: any = {}
+            const playTimeData: any = readBroadcastPolicyBackup(record)
             const playTimeFields = ['name', 'startTime', 'endTime', 'description', 'weekdays']
             playTimeFields.forEach((field) => {
               if (record.hasOwnProperty(field)) {

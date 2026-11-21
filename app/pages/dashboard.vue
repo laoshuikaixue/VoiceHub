@@ -79,6 +79,8 @@
             </div>
 
             <!-- 排期管理 -->
+            <LazyBroadcastPlayback v-if="activeTab === 'playback' && permissions.canUsePage('playback')" />
+
             <div
               v-if="activeTab === 'schedule' && permissions.canAccessPage('schedule')"
               class="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full"
@@ -245,13 +247,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { Menu, ChevronUp } from '@lucide/vue'
 import { useAuth } from '~/composables/useAuth'
 import { usePermissions } from '~/composables/usePermissions'
 import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useLocale } from '~/utils/locale'
 import { useScrollMemory } from '~/composables/useScrollMemory'
+
+const LazyBroadcastPlayback = defineAsyncComponent(() => import('~/components/Admin/BroadcastPlayback.vue'))
 
 // 使用站点配置
 const { siteTitle, initSiteConfig } = useSiteConfig()

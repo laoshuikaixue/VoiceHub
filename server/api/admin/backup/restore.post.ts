@@ -42,6 +42,7 @@ import { restoreAstrbotBindings } from '~~/server/utils/astrbot-backup'
 import { validateThemeConfig } from '~~/server/utils/theme-config'
 import { createApiError } from '~~/server/utils/apiError'
 import { clearDefaultPlayTime } from '~~/server/utils/play-time-default'
+import { readBroadcastPolicyBackup } from '~~/server/utils/play-slot'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { normalizeScheduleVisibilitySettings } from '~~/server/utils/system-settings-defaults'
 import { syncAllSequences } from '~~/server/utils/sequence-sync'
@@ -1044,7 +1045,7 @@ export default defineEventHandler(async (event) => {
 
                       case 'playTimes':
                         // 动态构建播放时段数据，自动跳过不存在的字段
-                        const playTimeData: any = {}
+                        const playTimeData: any = readBroadcastPolicyBackup(record)
                         const playTimeFields = ['name', 'startTime', 'endTime', 'description', 'weekdays']
 
                         playTimeFields.forEach((field) => {
