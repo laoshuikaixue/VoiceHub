@@ -38,6 +38,7 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'songs', m: WRITE_METHODS, any: ['songs:write'] },
   { p: 'songs/*', m: WRITE_METHODS, any: ['songs:write'] },
   { p: 'schedule', m: GET_METHODS, any: ['schedule:read'] },
+  { p: 'schedule/publish-context', m: GET_METHODS, any: ['schedule:write'] },
   { p: 'schedule/*', m: GET_METHODS, any: ['schedule:read'] },
   { p: 'schedule', m: WRITE_METHODS, any: ['schedule:write'] },
   { p: 'schedule/*', m: WRITE_METHODS, any: ['schedule:write'] },

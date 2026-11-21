@@ -21,6 +21,7 @@ import { assertSchedulePlacement, loadSongTitleMap } from '~~/server/utils/sched
 import { getServerDate } from '~~/server/utils/serverTime'
 
 import { recordAdminAudit } from '~~/server/utils/admin-audit'
+import { assertScheduleBroadcastConfirmed, lockBroadcast } from '~~/server/services/broadcastPlayback'
 export default defineEventHandler(async (event) => {
   const user = event.context.user
 
@@ -92,6 +93,8 @@ export default defineEventHandler(async (event) => {
 
     // 开始事务
     await db.transaction(async (tx) => {
+      await lockBroadcast(tx)
+      await assertScheduleBroadcastConfirmed(tx, inputDateStr, playTimeId, !playTimeId, body.broadcastConfirmation)
       // 1. 构建查询条件：指定日期 + (可选)指定时段
       const whereConditions = [
         gte(schedules.playDate, startOfDay),

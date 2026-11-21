@@ -6,6 +6,7 @@ import { canUseAdminPage, hasPermission } from '../../app/utils/admin-permission
 import { summarizeScheduleDuration, estimateBroadcastDuration } from '../../app/utils/schedule-duration.ts'
 import { admin as zhAdmin, serverErrors as zhErrors } from '../../app/utils/locale/zh-CN.ts'
 import { admin as enAdmin, serverErrors as enErrors } from '../../app/utils/locale/en-US.ts'
+import { resolveAdminRouteGuard } from '../../server/utils/admin-permission-routes.ts'
 
 test('歌单汇总单独统计缺失时长，而估算遵循正在播放的曲目及结束策略', () => {
   assert.deepEqual(summarizeScheduleDuration([{ song: { durationSeconds: 60 } }, { song: { durationSeconds: 0 } }, { song: {} }]), {
@@ -16,6 +17,18 @@ test('歌单汇总单独统计缺失时长，而估算遵循正在播放的曲�
   assert.equal(estimateBroadcastDuration([60, 90], 10, 50, false, false), 50)
   assert.equal(estimateBroadcastDuration([60, 90], 10, -10, true, false), 50)
   assert.equal(estimateBroadcastDuration([60, null], 10, 70, false, false), null)
+})
+
+test('发布预检要求排期写入权限，双语确认文案就绪', () => {
+  const guard = resolveAdminRouteGuard('/api/admin/schedule/publish-context', 'GET')
+  assert.deepEqual(guard?.any, ['schedule:write'])
+  for (const { confirmations } of [zhAdmin.scheduleManager, enAdmin.scheduleManager]) {
+    assert.ok(confirmations.autoBroadcastWarning)
+    assert.match(confirmations.unattendedAccount('qa-controller'), /qa-controller/)
+    assert.ok(confirmations.unattendedAccountOffline)
+  }
+  assert.ok(zhErrors.SCHEDULE_BROADCAST_CONFIRMATION_REQUIRED)
+  assert.ok(enErrors.SCHEDULE_BROADCAST_CONFIRMATION_REQUIRED)
 })
 
 test('播放控制权限区分查看、操作、设置和标记，并遵循显式拒绝', () => {

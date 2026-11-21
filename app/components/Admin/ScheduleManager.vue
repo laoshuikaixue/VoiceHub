@@ -5934,25 +5934,41 @@ const saveDraft = async () => {
   await saveDraftConfirmed()
 }
 
+const readPublishContext = (query) => $fetch('/api/admin/schedule/publish-context', {
+  ...auth.getAuthConfig(),
+  query
+})
+
+const appendBroadcastWarning = (context) => {
+  if (!context.slots.length) return
+  const text = locale.value.confirmations
+  const slots = context.slots.map(slot => `${slot.name} (${slot.startTime}–${slot.endTime})`).join('\n')
+  const account = context.account ? text.unattendedAccount(context.account) : text.unattendedAccountOffline
+  confirmDialogMessage.value += `\n\n${text.autoBroadcastWarning}\n${slots}\n${account}`
+  confirmDialogType.value = 'danger'
+}
+
 // 发布排期（需要确认）
 const publishSchedule = async () => {
-  if (!can('schedule:write')) return
+  if (!can('schedule:write') || loading.value) return
+  const playDate = selectedDate.value
+  const playTimeId = selectedPlayTime.value ? Number(selectedPlayTime.value) : undefined
+  const allowPlacementOverride = localScheduledSongs.value.some(item => Boolean(getPlayTimeConflict(item.song)))
+  const songsToPublish = localScheduledSongs.value.map((item, index) => ({
+    songId: item.song.id,
+    sequence: index + 1,
+    replayRequestId: item.replayRequestId || item.song?.replayRequestId || null
+  }))
+  const warningCount = getUnspecifiedPlayTimeWarningCount()
+  loading.value = true
   try {
-    const warningCount = getUnspecifiedPlayTimeWarningCount()
-    if (localScheduledSongs.value.length > 0 && warningCount > 0) {
+    const context = await readPublishContext({ playDate, playTimeId })
+    if (songsToPublish.length > 0 && warningCount > 0) {
       confirmDialogTitle.value = locale.value.confirmations.unspecifiedPlayTimeTitle
-      confirmDialogMessage.value = locale.value.confirmations.unspecifiedPlayTimePublishWarning(warningCount) + '\n' + locale.value.confirmations.publishScope(selectedDate.value, locale.value.allPlayTimes)
+      confirmDialogMessage.value = locale.value.confirmations.unspecifiedPlayTimePublishWarning(warningCount)
       confirmDialogType.value = 'danger'
       confirmDialogConfirmText.value = locale.value.confirmations.unspecifiedPlayTimePublishConfirm
-      confirmAction.value = async () => {
-        await publishScheduleConfirmed()
-      }
-      showConfirmDialog.value = true
-      return
-    }
-
-    // 如果列表为空，提示删除排期
-    if (localScheduledSongs.value.length === 0) {
+    } else if (songsToPublish.length === 0) {
       confirmDialogTitle.value = locale.value.confirmations.deleteScheduleTitle
       confirmDialogMessage.value = locale.value.confirmations.deleteScheduleMessage
       confirmDialogType.value = 'danger'
@@ -5964,44 +5980,31 @@ const publishSchedule = async () => {
       confirmDialogConfirmText.value = locale.value.publishSchedule
     }
 
-    confirmDialogMessage.value += `\n${locale.value.confirmations.publishScope(selectedDate.value, selectedPlayTime.value ? getPlayTimeName(Number(selectedPlayTime.value)) : locale.value.allPlayTimes)}`
-    confirmAction.value = async () => {
-      await publishScheduleConfirmed()
-    }
+    confirmDialogMessage.value += `\n${locale.value.confirmations.publishScope(playDate, playTimeId ? getPlayTimeName(playTimeId) : locale.value.allPlayTimes)}`
+    appendBroadcastWarning(context)
+    confirmAction.value = () => publishScheduleConfirmed({
+      playDate, playTimeId: playTimeId ?? null, allowPlacementOverride, songs: songsToPublish,
+      broadcastConfirmation: context.confirmation
+    })
     showConfirmDialog.value = true
   } catch (error) {
-    console.error('发布排期失败:', error)
+    window.$showNotification?.(localizeServerError(error), 'error')
+  } finally {
+    loading.value = false
   }
 }
 
 // 确认发布排期
-const publishScheduleConfirmed = async () => {
+const publishScheduleConfirmed = async (body) => {
   loading.value = true
-  const savedDate = selectedDate.value
-  const savedPlayTime = selectedPlayTime.value ? Number(selectedPlayTime.value) : 'all'
-  const allowPlacementOverride = localScheduledSongs.value.some(item => Boolean(getPlayTimeConflict(item.song)))
-
   try {
-    // 构建发布数据，携带拖拽时显式选择的重播申请绑定
-    const songsToPublish = localScheduledSongs.value.map((item, index) => ({
-      songId: item.song.id,
-      sequence: index + 1,
-      replayRequestId: item.replayRequestId || item.song?.replayRequestId || null
-    }))
-
-    // 调用批量发布API
     await $fetch('/api/admin/schedule/bulk-publish', {
       method: 'POST',
-      body: {
-        playDate: savedDate,
-        playTimeId: savedPlayTime === 'all' ? null : savedPlayTime,
-        allowPlacementOverride,
-        songs: songsToPublish
-      },
+      body,
       ...auth.getAuthConfig()
     })
 
-    notifySchedulePlaylistChanged({ dates: [savedDate], playTimeId: savedPlayTime })
+    notifySchedulePlaylistChanged({ dates: [body.playDate], playTimeId: body.playTimeId ?? 'all' })
     hasChanges.value = false
     await loadData() // 重新加载数据
 
@@ -6009,7 +6012,7 @@ const publishScheduleConfirmed = async () => {
     updateLocalScheduledSongs()
 
     if (window.$showNotification) {
-      if (songsToPublish.length === 0) {
+      if (body.songs.length === 0) {
         window.$showNotification(locale.value.messages.scheduleDeleted, 'success')
       } else {
         window.$showNotification(locale.value.messages.schedulePublished, 'success')
@@ -6027,8 +6030,10 @@ const publishScheduleConfirmed = async () => {
 
 // 发布单个草稿（需要确认）
 const publishSingleDraft = async (draft) => {
-  if (!can('schedule:write')) return
+  if (!can('schedule:write') || loading.value) return
+  loading.value = true
   try {
+    const context = await readPublishContext({ scheduleId: draft.id })
     confirmDialogTitle.value = locale.value.confirmations.publishDraftTitle
     confirmDialogMessage.value = callLocale(
       'confirmations.publishDraftMessage',
@@ -6037,23 +6042,26 @@ const publishSingleDraft = async (draft) => {
     )
     confirmDialogType.value = 'warning'
     confirmDialogConfirmText.value = locale.value.publish
+    appendBroadcastWarning(context)
     confirmAction.value = async () => {
-      await publishSingleDraftConfirmed(draft)
+      await publishSingleDraftConfirmed(draft, context.confirmation)
     }
     showConfirmDialog.value = true
   } catch (error) {
-    console.error('发布单个草稿失败:', error)
+    window.$showNotification?.(localizeServerError(error), 'error')
+  } finally {
+    loading.value = false
   }
 }
 
 // 确认发布单个草稿
-const publishSingleDraftConfirmed = async (draft) => {
+const publishSingleDraftConfirmed = async (draft, broadcastConfirmation) => {
   loading.value = true
 
   try {
     await $fetch('/api/admin/schedule/publish', {
       method: 'POST',
-      body: { scheduleId: draft.id },
+      body: { scheduleId: draft.id, broadcastConfirmation },
       ...auth.getAuthConfig()
     })
 

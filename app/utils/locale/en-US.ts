@@ -3531,6 +3531,9 @@ export const admin = {
       deleteScheduleConfirm: 'Delete',
       placementOverride: (original: string, target: string) => `Preferred slot: ${original}. Schedule in “${target}”?`,
       publishScope: (date: string, slot: string) => `Publish scope: ${date} · ${slot}`,
+      autoBroadcastWarning: 'This change affects these automatic playback slots. If unattended playback is ready, the published playlist will play at the scheduled start.',
+      unattendedAccount: (account: string) => `Current unattended account: ${account}`,
+      unattendedAccountOffline: 'No unattended account is currently online.',
       publishScheduleTitle: 'Publish Schedule',
       publishScheduleMessage:
         'Publish the current schedule? It will be visible immediately and notifications will be sent.',
@@ -5730,6 +5733,8 @@ export const serverErrors = {
   BROADCAST_ACCESS: 'You do not have access to playback control',
   BROADCAST_BUSY: 'Another device is controlling playback',
   BROADCAST_UNAVAILABLE: 'The slot, playlist or playback device has changed',
+  SCHEDULE_BROADCAST_CONFIRMATION_REQUIRED: 'Automatic playback details have changed. Reopen the publish confirmation.',
+  SCHEDULE_DRAFT_NOT_FOUND: 'The schedule draft was not found',
   COMMON_INVALID_PARAMS: 'Invalid parameters',
   COMMON_RATE_LIMITED_SECONDS: 'Too many requests. Try again in {0} seconds.',
   THEME_INVALID_LIST: 'The enabled theme list is invalid',

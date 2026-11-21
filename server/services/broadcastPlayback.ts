@@ -1,7 +1,7 @@
-import { randomUUID } from 'node:crypto'
-import { and, asc, eq, gte, lt, sql } from 'drizzle-orm'
+import { createHash, randomUUID } from 'node:crypto'
+import { and, asc, eq, gt, gte, isNull, lt, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { broadcastPlayback, broadcastStarts, playTimes, schedules, songs } from '~/drizzle/schema'
+import { authSessions, broadcastPlayback, broadcastStarts, playTimes, schedules, songs, users } from '~/drizzle/schema'
 import { getBeijingDateString, getBeijingWeekday, parseToBeijingTime } from '~/utils/timeUtils'
 import { summarizeScheduleDuration } from '~/utils/schedule-duration'
 import { getServerDate } from '~~/server/utils/serverTime'
@@ -78,8 +78,42 @@ export async function readBroadcastPage(date: string, slotId: number | undefined
   return { slots: available, slotId: selected?.id ?? null, entries, duration: summarizeScheduleDuration(entries), timestamp: getServerDate().getTime() }
 }
 
-async function lockBroadcast(tx: Tx) {
+export async function lockBroadcast(tx: Tx) {
   await tx.execute(sql`select pg_advisory_xact_lock(hashtext('voicehub.broadcast'))`)
+}
+
+export async function readScheduleBroadcastContext(
+  source: Tx | typeof db, date: string, slotId: number | null, wholeDay: boolean
+) {
+  if (!wholeDay && slotId === null) return { slots: [], account: null, confirmation: null }
+  const rows = await source.select().from(playTimes)
+    .where(wholeDay ? undefined : eq(playTimes.id, slotId!))
+    .orderBy(asc(playTimes.startTime), asc(playTimes.id)).for('share')
+  const enabled = rows.filter(slot => slot.broadcastAutoStart && broadcastWindow(date, slot))
+  if (!enabled.length) return { slots: [], account: null, confirmation: null }
+
+  const now = getServerDate()
+  const [controller] = await source.select({ username: users.username, armedAt: broadcastPlayback.armedAt })
+    .from(broadcastPlayback)
+    .innerJoin(users, eq(users.id, broadcastPlayback.userId))
+    .innerJoin(authSessions, and(eq(authSessions.userId, users.id), sql`${authSessions.id}::text = ${broadcastPlayback.authSession}`))
+    .where(and(eq(broadcastPlayback.id, 1), gt(broadcastPlayback.expiresAt, now), isNull(authSessions.revokedAt),
+      gt(authSessions.expiresAt, now), eq(users.status, 'active')))
+  const account = controller?.armedAt ? controller.username : null
+  const slots = enabled.map(slot => ({ id: slot.id, name: slot.name, startTime: slot.startTime, endTime: slot.endTime }))
+  const confirmation = createHash('sha256')
+    .update(JSON.stringify([date, slotId, wholeDay, slots, account, controller?.armedAt ?? null]))
+    .digest('hex')
+  return { slots, account, confirmation }
+}
+
+export async function assertScheduleBroadcastConfirmed(
+  tx: Tx, date: string, slotId: number | null, wholeDay: boolean, confirmation: unknown
+) {
+  const context = await readScheduleBroadcastContext(tx, date, slotId, wholeDay)
+  if ((context.confirmation !== null || typeof confirmation === 'string') && context.confirmation !== confirmation) {
+    throw createApiError(409, codes.SCHEDULE_BROADCAST_CONFIRMATION_REQUIRED, '自动播放信息已变化，请重新打开发布确认')
+  }
 }
 
 export async function saveBroadcastPolicy(

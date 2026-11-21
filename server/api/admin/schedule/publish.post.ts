@@ -7,6 +7,8 @@ import { fulfillReplayRequestsForSchedule, resolveScheduleReplayBindings } from 
 import { assertSchedulePlacement } from '~~/server/utils/schedulePlacementConstraint'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { recordAdminAudit } from '~~/server/utils/admin-audit'
+import { getBeijingDateString } from '~/utils/timeUtils'
+import { assertScheduleBroadcastConfirmed, lockBroadcast } from '~~/server/services/broadcastPlayback'
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user
@@ -61,10 +63,12 @@ export default defineEventHandler(async (event) => {
 
     // 使用事务包装更新排期和重播申请状态操作，保证原子性
     const publishResult = await db.transaction(async (tx) => {
+      await lockBroadcast(tx)
       await tx.select({ id: songs.id }).from(songs).where(eq(songs.id, draft.song.id)).for('update')
       const [currentDraft] = await tx.select({
         songId: schedules.songId,
         replayRequestId: schedules.replayRequestId,
+        playDate: schedules.playDate,
         playTimeId: schedules.playTimeId
       }).from(schedules)
         .where(and(eq(schedules.id, body.scheduleId), eq(schedules.isDraft, true)))
@@ -72,6 +76,7 @@ export default defineEventHandler(async (event) => {
       if (!currentDraft || currentDraft.songId !== draft.song.id) {
         throw createError({ statusCode: 409, message: '排期已发布或状态已变化，请刷新后重试' })
       }
+      await assertScheduleBroadcastConfirmed(tx, getBeijingDateString(currentDraft.playDate), currentDraft.playTimeId, false, body.broadcastConfirmation)
       // 更新草稿为已发布状态
       const publishedAt = getServerDate()
       const [resolvedItem] = await resolveScheduleReplayBindings(tx, [{
