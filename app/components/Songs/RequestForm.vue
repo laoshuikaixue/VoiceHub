@@ -227,9 +227,8 @@
           </div>
 
           <!-- 投稿设置摘要 - 位于投稿限额提示下方，按钮打开投稿选项弹窗 -->
-          <div v-if="submissionOptionsSummary" class="submission-options-summary">
+          <div v-if="submissionOptionsAvailable && user" class="submission-options-summary">
             <button
-              v-if="submissionOptionsAvailable && user"
               class="submission-options-trigger"
               :aria-label="locale.submissionOptions"
               :title="locale.submissionOptions"
@@ -239,8 +238,20 @@
               <Icon name="settings" :size="13" />
               <span>{{ locale.submissionOptions }}</span>
             </button>
-            <Icon v-else :size="12" name="settings" class="shrink-0" />
-            <span>{{ submissionOptionsSummary }}</span>
+            <span v-if="submissionOptionsSummary">{{ submissionOptionsSummary }}</span>
+          </div>
+
+          <div v-if="enableSubmissionRemarks && user" class="submission-options-summary">
+            <label for="request-recommendation">{{ locale.recommendation }}</label>
+            <textarea
+              id="request-recommendation"
+              v-model="submissionNote"
+              maxlength="50"
+              rows="2"
+              class="w-full rounded-lg border border-border-secondary bg-bg-tertiary p-2 text-text-primary"
+              :placeholder="locale.submissionNotePlaceholder"
+            />
+            <span>{{ submissionNote.length }}/50 · {{ locale.recommendationVisibility }}</span>
           </div>
 
           <!-- 音乐平台选择按钮 -->
@@ -1189,7 +1200,6 @@
       :initial-time-id="preferredPlayTimeId || defaultPlayTimeId"
       :today="todayPlayDate"
       :format-label="formatPlayTimeOptionLabel"
-      :show-note="enableSubmissionRemarks"
       :show-anonymous="allowAnonymousSubmission && !!user"
       :note-approval-required="submissionNoteRequiresApproval"
       :show-card-code="cardCodeEnabled"
@@ -1300,7 +1310,7 @@ const platform = ref('netease') // 占位值，平台配置加载后跟随后台
 const platformTouched = ref(false) // 用户是否手动切换过平台，切换后不再覆盖其选择
 const preferredPlayTimeId = ref('')
 const submissionNote = ref('')
-const submissionNotePublic = ref(true)
+const submissionNotePublic = ref(false)
 const submissionAnonymous = ref(false)
 const cardCode = ref('')
 const cardCodeDraft = ref('')
@@ -2721,7 +2731,6 @@ const validatePlaySlotSelection = (enforceRequired = true) => {
 const submissionOptionsAvailable = computed(
   () =>
     playTimeSelectionEnabled.value ||
-    enableSubmissionRemarks.value ||
     (allowAnonymousSubmission.value && !!user.value) ||
     cardCodeEnabled.value
 )
@@ -2737,16 +2746,17 @@ const submissionOptionsSummary = computed(() => {
   }
 
   const items = []
-  if (playTimeSelectionEnabled.value) {
-    items.push(text('submissionOptionItemSlot', '播出安排'))
+  if (playTimeSelectionEnabled.value && preferredPlayDate.value) {
+    items.push(preferredPlayDate.value)
   }
-  if (enableSubmissionRemarks.value) {
-    items.push(text('submissionOptionItemNote', '投稿留言'))
+  if (playTimeSelectionEnabled.value && preferredPlayTimeId.value) {
+    const slot = enabledPlayTimes.value.find(item => String(item.id) === String(preferredPlayTimeId.value))
+    if (slot) items.push(formatPlayTimeOptionLabel(slot))
   }
-  if (allowAnonymousSubmission.value && !!user.value) {
+  if (allowAnonymousSubmission.value && submissionAnonymous.value) {
     items.push(text('submissionOptionItemAnonymous', '匿名投稿'))
   }
-  if (cardCodeEnabled.value) {
+  if (cardCodeEnabled.value && cardCode.value.trim()) {
     items.push(text('submissionOptionItemCardCode', '点歌券'))
   }
   if (!items.length) return ''
@@ -2813,7 +2823,7 @@ const submissionOptionsText = computed(() => {
     anonymous: locale.value.anonymousSubmission || '匿名投稿',
     approvalHint: locale.value.submissionNoteApprovalHint || '公开留言需管理员审核通过后展示',
     notePlaceholder:
-      locale.value.submissionNotePlaceholder || '想说点什么？（选填，最多 300 字）',
+      locale.value.submissionNotePlaceholder || '写一句推荐这首歌的理由，最多 50 字',
     // 点歌券
     cardCodeLabel: locale.value.cardCode || '点歌券',
     cardCodePlaceholder: locale.value.cardCodePlaceholder || '请输入点歌券',
@@ -2898,7 +2908,7 @@ watch(enableCollaborativeSubmission, (enabled) => {
 watch(enableSubmissionRemarks, (enabled) => {
   if (!enabled) {
     submissionNote.value = ''
-    submissionNotePublic.value = true
+    submissionNotePublic.value = false
   }
 })
 
@@ -4423,7 +4433,7 @@ const resetForm = () => {
   hasSearched.value = false
   collaborators.value = []
   submissionNote.value = ''
-  submissionNotePublic.value = true
+  submissionNotePublic.value = false
   submissionAnonymous.value = false
   cardCode.value = ''
   cardCodeDraft.value = ''

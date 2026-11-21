@@ -151,6 +151,19 @@
               :placeholder="locale.siteLogoPlaceholder"
               :class="inputClass"
             />
+            <input
+              type="file"
+              :aria-label="locale.siteLogoUpload"
+              accept="image/png,image/jpeg,image/webp"
+              :class="inputClass"
+              @change="uploadSiteLogo"
+            />
+            <img
+              v-if="formData.siteLogoUrl.startsWith('data:image/')"
+              :src="formData.siteLogoUrl"
+              :alt="locale.siteLogoUpload"
+              class="mt-2 h-12 max-w-full object-contain"
+            />
           </div>
           <div>
             <label :class="labelClass">{{ locale.schoolLogoHome }}</label>
@@ -1431,6 +1444,22 @@ watch([esaTestSceneId, esaTestReady], () => {
   esaTestDetail.value = ''
   esaTestFailedThisAttempt = false
 })
+
+const uploadSiteLogo = (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+  event.target.value = ''
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 256 * 1024) {
+    showNotification(locale.value.siteLogoUploadInvalid, 'error')
+    return
+  }
+  const reader = new FileReader()
+  reader.onload = () => {
+    if (typeof reader.result === 'string') formData.value.siteLogoUrl = reader.result
+  }
+  reader.onerror = () => showNotification(locale.value.siteLogoUploadInvalid, 'error')
+  reader.readAsDataURL(file)
+}
 
 const formData = ref({
   siteTitle: '',

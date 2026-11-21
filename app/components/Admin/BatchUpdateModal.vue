@@ -1579,8 +1579,8 @@ const loadXLSX = async () => {
     }
 
     const script = document.createElement('script')
-    // SheetJS 官方发布源，npm 上的 xlsx 包已停更（停留在 0.18.5）
-    script.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
+    // 使用站内的 SheetJS 资源，支持离线导入。
+    script.src = '/vendor/sheetjs/xlsx.full.min.js'
     // 加载源完整性校验值，来源变更时须同步重算
     script.crossOrigin = 'anonymous'
     script.integrity = 'sha256-zAFRMKqFIefwiPiImOupSczcv7ON8L0Sm0S3Jzw6b0E='

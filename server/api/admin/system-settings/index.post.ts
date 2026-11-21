@@ -309,7 +309,15 @@ export default defineEventHandler(async (event) => {
     }
 
     if (body.siteLogoUrl !== undefined) {
-      updateData.siteLogoUrl = body.siteLogoUrl
+      const logo = body.siteLogoUrl
+      if (
+        typeof logo !== 'string' ||
+        (logo.startsWith('data:') &&
+          (logo.length > 350000 || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(logo)))
+      ) {
+        throw createError({ statusCode: 400, message: '站点 Logo 格式无效或文件大于 256 KiB' })
+      }
+      updateData.siteLogoUrl = logo
     }
 
     if (body.schoolLogoHomeUrl !== undefined) {

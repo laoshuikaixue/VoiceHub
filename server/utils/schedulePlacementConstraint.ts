@@ -25,6 +25,7 @@ export interface SchedulePlacementCheckInput {
   /** 批次级目标播出时段 ID；null 表示「整批落在未指定时段」 */
   playTimeId: number | null
   items: SchedulePlacementItem[]
+  allowOverride?: boolean
 }
 
 export interface SchedulePlacementViolation {
@@ -129,7 +130,7 @@ export async function assertSchedulePlacement(
   database: Pick<typeof db, 'select'> = db
 ): Promise<void> {
   const violations = await checkSchedulePlacement(input, database)
-  if (violations.length === 0) return
+  if (violations.length === 0 || input.allowOverride === true) return
 
   const describe = (songId: number) => songTitleMap?.get(songId) || `歌曲#${songId}`
   const detail = violations

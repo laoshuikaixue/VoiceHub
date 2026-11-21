@@ -845,14 +845,7 @@
               </div>
               <div class="h-6 w-[1px] bg-bg-tertiary mx-1" />
               <button
-                :disabled="(!canPublish) || !can('schedule:write')"
-                class="flex items-center gap-2 px-4 py-2 bg-success-10 hover:bg-success-20 text-success text-[10px] font-black rounded-xl border border-success-20 transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
-                @click="publishSchedule"
-              >
-                <Send class="w-3 h-3" /> {{ locale.publishSchedule }}
-              </button>
-              <button
-                :disabled="(!hasChanges) || !can('schedule:write')"
+                :disabled="!canPublish || !can('schedule:write')"
                 class="flex items-center gap-2 px-5 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black rounded-xl shadow-lg shadow-[var(--primary-glow)] transition-all uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                 @click="saveSequence"
               >
@@ -1174,15 +1167,6 @@
         </button>
         <button
           class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="(!canPublish) || !can('schedule:write')"
-          :title="locale.publishOnly"
-          @click="publishSchedule"
-        >
-          <Send class="w-4 h-4" />
-          <span class="text-[9px] font-bold whitespace-nowrap">{{ locale.publishScheduleShort }}</span>
-        </button>
-        <button
-          class="w-12 shrink-0 flex flex-col items-center justify-center gap-0.5 py-1.5 bg-bg-secondary border border-border-secondary text-primary rounded-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="(refreshingAllDurations.running) || !can('songs:write')"
           :title="refreshingAllDurations.running ? `${locale.refreshPageDurations} (${refreshingAllDurations.progress})` : locale.refreshPageDurations"
           @click="refreshAllDurations"
@@ -1203,7 +1187,7 @@
 
     <!-- 主要操作 -->
     <button
-      :disabled="(!hasChanges) || !can('schedule:write')"
+      :disabled="!canPublish || !can('schedule:write')"
       class="shrink-0 px-3 py-2 bg-primary-hover hover:bg-primary text-text-primary text-[10px] font-black uppercase tracking-wider rounded-lg shadow-lg shadow-[var(--primary-glow)] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
       @click="saveSequence"
     >
@@ -2975,7 +2959,7 @@ const hasUnpublishedDrafts = computed(() => {
 
 // 计算是否有变化或有未发布的草稿
 const canPublish = computed(() => {
-  return (hasChanges.value && localScheduledSongs.value.length > 0) || hasUnpublishedDrafts.value
+  return hasChanges.value || hasUnpublishedDrafts.value
 })
 
 // 草稿相关数据
@@ -4900,8 +4884,9 @@ const updateLocalScheduledSongs = () => {
   console.log('当天已发布排期:', todaySchedules.length)
   console.log('当天草稿排期:', todayDrafts.length)
 
-  // 合并已发布和草稿排期
-  let allSchedules = [...todaySchedules, ...todayDrafts]
+  // 每个时段优先显示草稿，公示版保留在数据库中。
+  const draftSlots = new Set(todayDrafts.map((draft) => draft.playTimeId ?? null))
+  let allSchedules = [...todaySchedules.filter((item) => !draftSlots.has(item.playTimeId ?? null)), ...todayDrafts]
 
   // 如果选择了特定播出时段，进行过滤
   if (selectedPlayTime.value) {
@@ -5081,19 +5066,8 @@ const getPlayTimeConflict = (song) => {
 const canAddToSchedule = (song) => {
   const conflict = getPlayTimeConflict(song)
   if (!conflict) return true
-  if (window.$showNotification) {
-    const name = conflict.preferredPlayTimeName || `时段#${conflict.preferredPlayTimeId}`
-    window.$showNotification(
-      callLocale(
-        'messages.playTimeConstraintViolation',
-        `《${song?.title || '该歌曲'}》指定了播出时段「${name}」，只能排到该时段`,
-        song?.title || '',
-        name
-      ),
-      'warning'
-    )
-  }
-  return false
+  const target = conflict.currentPlayTimeId ? getPlayTimeName(conflict.currentPlayTimeId) : locale.value.allPlayTimes
+  return window.confirm(locale.value.confirmations.placementOverride(conflict.preferredPlayTimeName, target))
 }
 
 // 从拖拽数据中查找歌曲（优先查 songs/replayRequests，再回退到 pool）
@@ -5900,6 +5874,7 @@ const saveDraftConfirmed = async () => {
   loading.value = true
   const savedDate = selectedDate.value
   const savedPlayTime = selectedPlayTime.value ? Number(selectedPlayTime.value) : 'all'
+  const allowPlacementOverride = localScheduledSongs.value.some(item => Boolean(getPlayTimeConflict(item.song)))
 
   try {
     await $fetch('/api/admin/schedule/bulk-draft', {
@@ -5907,6 +5882,7 @@ const saveDraftConfirmed = async () => {
       body: {
         playDate: savedDate,
         playTimeId: savedPlayTime === 'all' ? null : savedPlayTime,
+        allowPlacementOverride,
         songs: localScheduledSongs.value.map((item) => ({
           songId: item.song.id,
           replayRequestId: item.replayRequestId || item.song?.replayRequestId || null
@@ -5965,7 +5941,7 @@ const publishSchedule = async () => {
     const warningCount = getUnspecifiedPlayTimeWarningCount()
     if (localScheduledSongs.value.length > 0 && warningCount > 0) {
       confirmDialogTitle.value = locale.value.confirmations.unspecifiedPlayTimeTitle
-      confirmDialogMessage.value = locale.value.confirmations.unspecifiedPlayTimePublishWarning(warningCount)
+      confirmDialogMessage.value = locale.value.confirmations.unspecifiedPlayTimePublishWarning(warningCount) + '\n' + locale.value.confirmations.publishScope(selectedDate.value, locale.value.allPlayTimes)
       confirmDialogType.value = 'danger'
       confirmDialogConfirmText.value = locale.value.confirmations.unspecifiedPlayTimePublishConfirm
       confirmAction.value = async () => {
@@ -5988,6 +5964,7 @@ const publishSchedule = async () => {
       confirmDialogConfirmText.value = locale.value.publishSchedule
     }
 
+    confirmDialogMessage.value += `\n${locale.value.confirmations.publishScope(selectedDate.value, selectedPlayTime.value ? getPlayTimeName(Number(selectedPlayTime.value)) : locale.value.allPlayTimes)}`
     confirmAction.value = async () => {
       await publishScheduleConfirmed()
     }
@@ -6002,6 +5979,7 @@ const publishScheduleConfirmed = async () => {
   loading.value = true
   const savedDate = selectedDate.value
   const savedPlayTime = selectedPlayTime.value ? Number(selectedPlayTime.value) : 'all'
+  const allowPlacementOverride = localScheduledSongs.value.some(item => Boolean(getPlayTimeConflict(item.song)))
 
   try {
     // 构建发布数据，携带拖拽时显式选择的重播申请绑定
@@ -6017,6 +5995,7 @@ const publishScheduleConfirmed = async () => {
       body: {
         playDate: savedDate,
         playTimeId: savedPlayTime === 'all' ? null : savedPlayTime,
+        allowPlacementOverride,
         songs: songsToPublish
       },
       ...auth.getAuthConfig()

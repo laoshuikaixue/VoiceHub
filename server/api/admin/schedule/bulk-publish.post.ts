@@ -137,7 +137,7 @@ export default defineEventHandler(async (event) => {
 
       const resolvedItems = await resolveScheduleReplayBindings(tx, scheduleItems, previousReplayBindings)
       await assertSchedulePlacement(
-        { playTimeId, items: resolvedItems },
+        { playTimeId, items: resolvedItems, allowOverride: body.allowPlacementOverride === true },
         await loadSongTitleMap(Array.from(new Set(songIds)), tx),
         tx
       )

@@ -4,10 +4,8 @@ import { playTimes, schedules, songs } from '~/drizzle/schema'
 import { and, eq, gte, inArray, lte } from 'drizzle-orm'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import { restoreCardCodeAfterScheduleRemoval } from '~~/server/services/cardCodeLifecycleService'
-import { parseScheduleReplayRequestId, resolveScheduleReplayBindings, restoreReplayRequestsToPending } from '~~/server/utils/scheduleReplayBinding'
+import { parseScheduleReplayRequestId, resolveScheduleReplayBindings } from '~~/server/utils/scheduleReplayBinding'
 import { assertSchedulePlacement, loadSongTitleMap } from '~~/server/utils/schedulePlacementConstraint'
-import { getServerDate } from '~~/server/utils/serverTime'
 
 const MAX_SCHEDULE_ITEMS = 1000
 
@@ -109,11 +107,9 @@ export default defineEventHandler(async (event) => {
       .select({
         songId: schedules.songId,
         replayRequestId: schedules.replayRequestId,
-        isDraft: schedules.isDraft,
-        cardCodeId: songs.cardCodeId
+        isDraft: schedules.isDraft
       })
       .from(schedules)
-      .leftJoin(songs, eq(schedules.songId, songs.id))
       .where(and(...whereConditions))
 
     const previousBindings = new Map<number, number>()
@@ -122,72 +118,12 @@ export default defineEventHandler(async (event) => {
     }
     const resolvedItems = await resolveScheduleReplayBindings(tx, scheduleItems, previousBindings)
     await assertSchedulePlacement(
-      { playTimeId, items: resolvedItems },
+      { playTimeId, items: resolvedItems, allowOverride: body.allowPlacementOverride === true },
       await loadSongTitleMap(songIds, tx),
       tx
     )
 
-    await tx.delete(schedules).where(and(...whereConditions))
-
-    // 与逐条移除排期的行为保持一致：被覆盖的已发布排期一律返还点歌券、回退重播申请，
-    // 否则草稿转正式发布时找不到 PENDING 申请，重播标识会丢失
-    const removedPublishedSongIds = Array.from(
-      new Set(
-        schedulesToReplace.filter((s) => !s.isDraft).map((s) => s.songId)
-      )
-    )
-
-    if (removedPublishedSongIds.length > 0) {
-      const otherPublished = await tx
-        .select({ songId: schedules.songId })
-        .from(schedules)
-        .where(
-          and(
-            eq(schedules.isDraft, false),
-            inArray(schedules.songId, removedPublishedSongIds)
-          )
-        )
-      const songsWithOtherSchedules = new Set(otherPublished.map((s) => s.songId))
-      const finalRestoreIds = removedPublishedSongIds.filter(
-        (songId) => !songsWithOtherSchedules.has(songId)
-      )
-
-      if (finalRestoreIds.length > 0) {
-        const finalRestoreIdSet = new Set(finalRestoreIds)
-        const restoreCardCodeMap = new Map<number, number>()
-        for (const replaced of schedulesToReplace) {
-          if (
-            !replaced.isDraft &&
-            replaced.cardCodeId &&
-            finalRestoreIdSet.has(replaced.songId)
-          ) {
-            restoreCardCodeMap.set(replaced.songId, replaced.cardCodeId)
-          }
-        }
-
-        for (const [songId, cardCodeId] of restoreCardCodeMap) {
-          const restoreResult = await restoreCardCodeAfterScheduleRemoval(tx, {
-            songId,
-            cardCodeId,
-            operatorId: user.id
-          })
-          if (
-            !restoreResult.changed &&
-            ['CONCURRENT_CHANGE', 'MISSING_CARD_CODE'].includes(
-              String(restoreResult.reason || '')
-            )
-          ) {
-            throw createApiError(409, SERVER_ERROR_CODES.SONG_CARD_RESTORE_FAILED, '点歌券返还失败，保存草稿已终止')
-          }
-        }
-
-        await restoreReplayRequestsToPending({
-          tx,
-          songIds: finalRestoreIds,
-          at: getServerDate()
-        })
-      }
-    }
+    await tx.delete(schedules).where(and(...whereConditions, eq(schedules.isDraft, true)))
 
     if (scheduleItems.length > 0) {
       await tx.insert(schedules).values(

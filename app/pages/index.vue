@@ -14,7 +14,7 @@
       <div class="top-bar">
         <div class="logo-section">
           <NuxtLink class="logo-link" to="/">
-            <img alt="VoiceHub Logo" class="logo-image" :src="getLogo()" />
+            <img :alt="siteTitle || 'VoiceHub'" class="logo-image" :src="logoUrl?.startsWith('data:image/') ? logoUrl : getLogo()" />
           </NuxtLink>
           <!-- 横线和学校logo -->
           <div v-if="schoolLogoHomeDisplayUrl" class="logo-divider-container">
@@ -874,6 +874,7 @@ const {
   isLoaded,
   setSiteConfigData,
   siteTitle,
+  logoUrl,
   description: siteDescription,
   guidelines: submissionGuidelines,
   icp: icpNumber,

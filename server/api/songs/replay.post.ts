@@ -2,12 +2,12 @@ import { and, db, desc, eq, songs, songReplayRequests, semesters, playTimes } fr
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { enqueueAstrbotGroupEvent } from '~~/server/services/astrbotGroupService'
 import { createApiError } from '~~/server/utils/apiError'
-import { SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
+import { SUBMISSION_NOTE_MAX_LENGTH, SUBMISSION_NOTE_STATUS } from '~~/server/config/constants'
 import { z } from 'zod'
 
 const replayRequestSchema = z.object({
   songId: z.number().int().gt(0, '歌曲ID无效'),
-  submissionNote: z.string().trim().max(300, '备注留言不能超过300个字符').optional().nullable(),
+  submissionNote: z.string().trim().max(SUBMISSION_NOTE_MAX_LENGTH).optional().nullable(),
   submissionNotePublic: z.boolean().optional(),
   preferredPlayTimeId: z.number().int().gt(0, '播出时段 ID 无效').optional().nullable()
 })

@@ -65,12 +65,12 @@ RUN set -eux; \
     pnpm install --prod --frozen-lockfile
 
 # 从构建阶段复制必要文件
-COPY --from=builder /app/drizzle.config.ts ./
-COPY --from=builder /app/.output ./.output
-COPY --from=builder /app/app/drizzle ./app/drizzle
+COPY --from=builder --chown=node:node /app/drizzle.config.ts ./
+COPY --from=builder --chown=node:node /app/.output ./.output
+COPY --from=builder --chown=node:node /app/app/drizzle ./app/drizzle
 # db.ts 运行时依赖该模块（tsx 直跑源码），缺失会导致 migrate/create-admin 报 ERR_MODULE_NOT_FOUND
-COPY --from=builder /app/server/utils/serverless-runtime.ts ./server/utils/
-COPY --from=builder /app/scripts ./scripts
+COPY --from=builder --chown=node:node /app/server/utils/serverless-runtime.ts ./server/utils/
+COPY --from=builder --chown=node:node /app/scripts ./scripts
 
 # .output 内的 esbuild 打包副本是构建平台（amd64）二进制，非 amd64 镜像里目标平台包缺失会导致
 # 运行时生成插件 prelude 失败；运行阶段已按目标架构安装 esbuild，删除副本让其回落到 /app/node_modules
@@ -86,7 +86,7 @@ ENV NODE_ENV=production \
 EXPOSE $PORT
 
 # 以非 root 用户运行（node 官方镜像自带 node 用户，无需手动创建）
-RUN chown -R node:node /app
+RUN chown node:node /app
 USER node
 
 # 完成数据库迁移后启动应用，插件配置由服务端读取。

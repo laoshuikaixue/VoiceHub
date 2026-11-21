@@ -87,6 +87,8 @@ export const siteConfig = {
 
   visualIdentity: 'Visual Identity',
   siteLogoUrl: 'Site Logo URL',
+  siteLogoUpload: 'Upload site logo',
+  siteLogoUploadInvalid: 'Choose a PNG, JPEG, or WebP image up to 256 KiB.',
   siteLogoPlaceholder: 'Enter the logo image URL',
   schoolLogoHome: 'Home School Logo URL (Dark)',
   schoolLogoHomePlaceholder: 'Enter the dark-mode school logo URL first',
@@ -1930,7 +1932,7 @@ export const pages = {
       cardCodeLockedOrUnavailable: 'This request card is locked or unavailable',
       cardCodeRequiredForSite: 'This site requires a valid request card to submit songs',
       cardCodeTooLong: 'Request card code cannot exceed 100 characters',
-      submissionOptions: 'More options',
+      submissionOptions: 'Request preferences',
       submissionOptionsTitle: 'Submission options',
       submissionOptionsSubtitle:
         'Your note and request card are submitted with this request; both are optional',
@@ -1994,7 +1996,9 @@ export const pages = {
       publicToUsers: 'Remark visible to signed-in users',
       anonymousSubmission: 'Anonymous submission',
       submissionNoteApprovalHint: 'Public note will show after admin approval.',
-      submissionNotePlaceholder: 'Anything to add? (optional, up to 300 chars)',
+      recommendation: 'Recommendation (optional)',
+      recommendationVisibility: 'Visible in the admin console',
+      submissionNotePlaceholder: 'Why do you recommend this song? Up to 50 characters.',
       coverAlt: 'Cover',
       albumDetailsTitle: 'Click to view album details',
       album: 'Album: ',
@@ -3525,6 +3529,8 @@ export const admin = {
       deleteScheduleTitle: 'Delete Schedule',
       deleteScheduleMessage: 'Delete all schedules for this day? This cannot be recovered.',
       deleteScheduleConfirm: 'Delete',
+      placementOverride: (original: string, target: string) => `Preferred slot: ${original}. Schedule in “${target}”?`,
+      publishScope: (date: string, slot: string) => `Publish scope: ${date} · ${slot}`,
       publishScheduleTitle: 'Publish Schedule',
       publishScheduleMessage:
         'Publish the current schedule? It will be visible immediately and notifications will be sent.',

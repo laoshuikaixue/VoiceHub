@@ -592,7 +592,7 @@ export const SONG_DURATION_MAX_SECONDS = 7200
 
 // 投稿留言长度上限：站点表单（RequestForm.vue 的 maxlength）、投稿校验（zod）
 // 与机器人端点前置校验共用同一个数值
-export const SUBMISSION_NOTE_MAX_LENGTH = 300
+export const SUBMISSION_NOTE_MAX_LENGTH = 50
 
 // 主题白名单（主题管理校验用；新增主题需同步 app/drizzle/schema.ts 默认值、迁移文件与前端 app/composables/useTheme.ts）
 export const THEMES = ['System', 'ClassicDark', 'ClassicLight', 'ModernLight'] as const
