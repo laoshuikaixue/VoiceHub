@@ -271,6 +271,19 @@ export const astrbotBindingCodes = pgTable('AstrbotBindingCode', {
 }, (table) => [primaryKey({ columns: [table.userId, table.platform] }),
   uniqueIndex('AstrbotBindingCode_hash_unique').on(table.codeHash)]);
 
+// 绑定链接票据：由机器人在会话内发起，用户在浏览器确认后才落库为绑定。
+// consumedByUserId 记录确认账号，用于重试幂等（同一账号重复确认返回成功）。
+export const astrbotBindTickets = pgTable('AstrbotBindTicket', {
+  tokenHash: text('tokenHash').primaryKey(),
+  platform: text('platform').notNull(),
+  adapter: text('adapter').notNull(),
+  umo: text('umo').notNull(),
+  createdAt: timestamp('createdAt').defaultNow().notNull(),
+  expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+  consumedAt: timestamp('consumedAt', { withTimezone: true }),
+  consumedByUserId: integer('consumedByUserId')
+}, (table) => [index('AstrbotBindTicket_expires_idx').on(table.expiresAt)]);
+
 // 每个用户每个平台一条绑定；适配器名与 UMO 实例名分离存储。
 export const astrbotBindings = pgTable('AstrbotBinding', {
   userId: integer('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),

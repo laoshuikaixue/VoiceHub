@@ -16,6 +16,17 @@ export function hashAstrbotBindCode(code: string) {
   return createHash('sha256').update(code).digest('hex')
 }
 
+/** 绑定链接票据与绑定码同源防护：只存摘要，原文仅出现在链接中一次。 */
+export const ASTRBOT_BIND_TICKET_TTL_SECONDS = 600
+
+export function createAstrbotBindTicket() {
+  return randomBytes(24).toString('hex')
+}
+
+export function hashAstrbotBindTicket(token: string) {
+  return createHash('sha256').update(token).digest('hex')
+}
+
 export function equalAstrbotToken(actual: string, expected: string) {
   if (!actual || !expected) return false
   const a = Buffer.from(actual)

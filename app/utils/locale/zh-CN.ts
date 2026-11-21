@@ -480,6 +480,21 @@ export const pages = {
     aggregateUnavailableTitle: '当前登录方式暂不可用',
     aggregateUnavailableAction: '选择其他登录方式'
   },
+  bindTicket: {
+    title: '确认绑定机器人',
+    subtitle: '确认后，该机器人会话将接收当前账号的通知',
+    platform: '平台',
+    target: '会话',
+    expiresHint: '链接将在一段时间后失效，请尽快确认',
+    confirm: '确认绑定',
+    confirming: '绑定中...',
+    success: '绑定成功',
+    alreadyBound: '该账号已绑定此会话',
+    invalid: '绑定链接无效或已过期',
+    backToAccount: '返回账号设置',
+    cancel: '取消',
+    failed: '绑定失败，请重试'
+  },
   resetPassword: {
     title: '重置密码',
     subtitle: '请设置您的新密码',
@@ -5718,6 +5733,7 @@ export const serverErrors = {
   NOTIFICATION_AUTH_REQUIRED: '请先登录后再操作通知',
   ASTRBOT_NOT_CONFIGURED: '机器人推送未启用或尚未配置',
   ASTRBOT_BIND_CODE_INVALID: '绑定码无效、已过期或已使用',
+  ASTRBOT_BIND_TICKET_INVALID: '绑定链接无效、已过期或已使用',
   ASTRBOT_BIND_CODE_EXPIRED: '绑定码已过期',
   ASTRBOT_BIND_CODE_USED: '绑定码已使用',
   ASTRBOT_UMO_INVALID: '机器人会话 ID 无效',

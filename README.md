@@ -972,6 +972,8 @@ VoiceHub/
 │   │   ├── change-password.vue # 修改密码页面
 │   │   ├── dashboard.vue       # 用户仪表盘
 │   │   ├── forgot-password.vue # 找回密码页面
+│   │   ├── bind/               # 机器人绑定确认页
+│   │   │   └── [token].vue     # 登录后确认绑定链接
 │   │   ├── index.vue           # 首页
 │   │   ├── legal/              # 协议文档页面
 │   │   │   └── [slug].vue      # 协议文档内容页
@@ -1337,6 +1339,8 @@ VoiceHub/
 │   │   ├── notifications/  # 通知系统API
 │   │   │   ├── astrbot/             # AstrBot 绑定码、状态、解绑与测试推送
 │   │   │   │   ├── bind-code.post.ts # 发放指定平台的绑定码
+│   │   │   │   ├── bind-ticket.get.ts # 预览绑定链接（只读，不落库）
+│   │   │   │   ├── bind-ticket.post.ts # 登录后确认绑定链接
 │   │   │   │   ├── status.get.ts     # 查询四平台绑定状态
 │   │   │   │   ├── test.post.ts      # 向当前绑定目标发送测试推送
 │   │   │   │   └── unbind.post.ts    # 解除指定平台的绑定
@@ -1355,6 +1359,7 @@ VoiceHub/
 │   │   ├── bot/            # AstrBot 插件令牌回调
 │   │   │   ├── voicehub/            # 私聊绑定、歌单与投递回调
 │   │   │   │   ├── bind.post.ts     # 一次性绑定码换取会话绑定
+│   │   │   │   ├── bind-link.post.ts # 会话内发起绑定，返回一次性确认链接
 │   │   │   │   ├── unbind.post.ts   # 机器人侧解绑当前会话
 │   │   │   │   ├── verify-targets.post.ts # 推送前核对私聊绑定、通知开关与群授权
 │   │   │   │   ├── pull.post.ts     # 领取待投递通知（pull 模式下插件轮询）

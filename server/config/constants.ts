@@ -41,6 +41,7 @@ export const HTTP_STATUS = {
 // 机器人端点仅以共享令牌鉴权，禁止浏览器 Cookie 参与。
 export const BOT_ROUTES = new Set([
   'POST /api/bot/voicehub/bind',
+  'POST /api/bot/voicehub/bind-link',
   'POST /api/bot/voicehub/unbind',
   'POST /api/bot/voicehub/verify-targets',
   'POST /api/bot/voicehub/pull',
@@ -357,6 +358,7 @@ export const SERVER_ERROR_CODES = {
   NOTIFICATION_AUTH_REQUIRED: 'NOTIFICATION_AUTH_REQUIRED',
   ASTRBOT_NOT_CONFIGURED: 'ASTRBOT_NOT_CONFIGURED',
   ASTRBOT_BIND_CODE_INVALID: 'ASTRBOT_BIND_CODE_INVALID',
+  ASTRBOT_BIND_TICKET_INVALID: 'ASTRBOT_BIND_TICKET_INVALID',
   ASTRBOT_BIND_CODE_EXPIRED: 'ASTRBOT_BIND_CODE_EXPIRED',
   ASTRBOT_BIND_CODE_USED: 'ASTRBOT_BIND_CODE_USED',
   ASTRBOT_UMO_INVALID: 'ASTRBOT_UMO_INVALID',

@@ -493,6 +493,21 @@ export const pages = {
     aggregateUnavailableTitle: 'This sign-in method is currently unavailable',
     aggregateUnavailableAction: 'Choose Another Method'
   },
+  bindTicket: {
+    title: 'Confirm Bot Link',
+    subtitle: 'After confirming, this bot chat will receive notifications for your account',
+    platform: 'Platform',
+    target: 'Chat',
+    expiresHint: 'This link expires soon. Please confirm now.',
+    confirm: 'Confirm Link',
+    confirming: 'Linking...',
+    success: 'Linked successfully',
+    alreadyBound: 'This chat is already linked to your account',
+    invalid: 'The link is invalid or has expired',
+    backToAccount: 'Back to Account Settings',
+    cancel: 'Cancel',
+    failed: 'Linking failed, please retry'
+  },
   resetPassword: {
     title: 'Reset Password',
     subtitle: 'Set your new password',
@@ -5924,6 +5939,7 @@ export const serverErrors = {
   NOTIFICATION_AUTH_REQUIRED: 'Please sign in before working with notifications',
   ASTRBOT_NOT_CONFIGURED: 'Bot push is disabled or not configured',
   ASTRBOT_BIND_CODE_INVALID: 'Binding code is invalid, expired, or already used',
+  ASTRBOT_BIND_TICKET_INVALID: 'Binding link is invalid, expired, or already used',
   ASTRBOT_BIND_CODE_EXPIRED: 'Binding code has expired',
   ASTRBOT_BIND_CODE_USED: 'Binding code was already used',
   ASTRBOT_UMO_INVALID: 'Invalid bot session ID',
