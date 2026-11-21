@@ -2,6 +2,7 @@ import { computed, ref, readonly } from 'vue'
 import { getAggregateOAuthLoginTypesOrDefault, getProviderDisplayName } from '~/utils/oauth'
 import { parseEsaCaptchaScenes } from '~/utils/esaCaptcha'
 import { applyThemeConfig, useTheme } from '~/composables/useTheme'
+import { useOrganizationLabelConfig } from '~/utils/locale'
 
 const THEME_LOGO_SEPARATOR = '||'
 
@@ -95,7 +96,7 @@ const getImageDisplayUrl = (url) => {
 }
 
 // 供 SSR 预取灌入站点配置（主题应用受 applyThemeConfig 的 import.meta.server 守卫，须在客户端单独触发）
-export const setSiteConfigData = (data) => {
+const cacheSiteConfigData = (data) => {
   if (!data || typeof data !== 'object') return
   siteConfig.value = { ...siteConfig.value, ...data }
   isLoaded.value = true
@@ -103,6 +104,15 @@ export const setSiteConfigData = (data) => {
 
 export const useSiteConfig = () => {
   const { isDark } = useTheme()
+  const organizationLabelConfig = useOrganizationLabelConfig()
+  const setSiteConfigData = (data) => {
+    if (!data || typeof data !== 'object') return
+    organizationLabelConfig.value = {
+      organizationLabelZh: data.organizationLabelZh || '',
+      organizationLabelEn: data.organizationLabelEn || ''
+    }
+    cacheSiteConfigData(data)
+  }
   // 获取站点配置
   const fetchSiteConfig = async () => {
     if (isLoading.value) return
@@ -116,7 +126,7 @@ export const useSiteConfig = () => {
       }
 
       const data = await response.json()
-      siteConfig.value = data
+      setSiteConfigData(data)
       try {
         applyThemeConfig(
           data.defaultTheme,
@@ -342,6 +352,7 @@ export const useSiteConfig = () => {
     oauth,
     oauthProviders,
     fetchSiteConfig,
+    setSiteConfigData,
     initSiteConfig,
     refreshSiteConfig
   }

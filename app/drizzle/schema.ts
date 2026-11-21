@@ -351,6 +351,8 @@ export const systemSettings = pgTable('SystemSettings', {
   // 点歌时播出日期+时段是否强制必选（全局总开关，依赖 enablePlayTimeSelection）
   playSlotRequired: boolean('playSlotRequired').default(false).notNull(),
   siteTitle: text('siteTitle'),
+  organizationLabelZh: text('organizationLabelZh').default('').notNull(),
+  organizationLabelEn: text('organizationLabelEn').default('').notNull(),
   siteLogoUrl: text('siteLogoUrl'),
   schoolLogoHomeUrl: text('schoolLogoHomeUrl'),
   schoolLogoPrintUrl: text('schoolLogoPrintUrl'),

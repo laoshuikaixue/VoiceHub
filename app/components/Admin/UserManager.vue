@@ -2953,6 +2953,7 @@ const handleFileUpload = async (event) => {
             'password',
             'role',
             'grade',
+            'college',
             'class',
             ...Object.values(locale.value.importModal.sampleHeaders || {})
           ]

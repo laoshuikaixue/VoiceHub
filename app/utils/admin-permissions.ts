@@ -18,10 +18,11 @@ export const PRIV_GRANT = 'priv:grant'
 // 站点级：管理员审计与日志管理，仅供超级管理员。不进入权限目录，无法被显式授出
 export const PRIV_AUDIT = 'priv:audit'
 export const PRIV_LOGS = 'priv:logs'
+export const PRIV_ORGANIZATION_LABEL = 'priv:organization-label'
 
 // 私有码只在持有全站通配 `*`（即超级管理员模板）时生效；
 // `priv:*` 等域通配不得覆盖，避免把审计能力随通配授权扩散出去。
-export const PRIVATE_PERMISSION_CODES: readonly string[] = [PRIV_AUDIT, PRIV_LOGS]
+export const PRIVATE_PERMISSION_CODES: readonly string[] = [PRIV_AUDIT, PRIV_LOGS, PRIV_ORGANIZATION_LABEL]
 const PRIVATE_PERMISSION_CODE_SET: ReadonlySet<string> = new Set(PRIVATE_PERMISSION_CODES)
 
 // 安全阀保护的站点级能力：移出其最后一个持有者会把站点锁死在无人可再授权的状态

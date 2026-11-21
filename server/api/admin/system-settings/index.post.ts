@@ -1,4 +1,5 @@
-import { hasAdminPermission, PRIV_LOGS } from '~~/app/utils/admin-permissions'
+import { hasAdminPermission, PRIV_LOGS, PRIV_ORGANIZATION_LABEL } from '~~/app/utils/admin-permissions'
+import { ORGANIZATION_LABEL_FIELDS, parseOrganizationLabel } from '~/utils/organization-labels'
 import { db } from '~/drizzle/db'
 import { systemSettings } from '~/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -206,6 +207,15 @@ export default defineEventHandler(async (event) => {
 
     // 验证请求体
     let updateData: any = {}
+    for (const field of ORGANIZATION_LABEL_FIELDS) {
+      if (!body || !Object.hasOwn(body, field)) continue
+      if (!hasAdminPermission(user, PRIV_ORGANIZATION_LABEL)) {
+        throw createApiError(403, SERVER_ERROR_CODES.COMMON_INSUFFICIENT_PERMISSION, '仅超级管理员可修改组织显示名称')
+      }
+      const label = parseOrganizationLabel(body[field])
+      if (label === null) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '组织显示名称无效')
+      updateData[field] = label
+    }
 
     // 获取当前设置，用于验证依赖配置的完整性
     const settingsResult = await db.select().from(systemSettings).limit(1)

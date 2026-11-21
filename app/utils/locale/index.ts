@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import * as zhCN from './zh-CN'
+import { applyOrganizationLabels, organizationLabels } from '../organization-labels'
 
 export const supportedLocales = [
   { code: 'zh-CN', label: '简体中文' },
@@ -124,6 +125,23 @@ export function resolveLocaleFromAcceptLanguage(header?: string | null): Locale 
 // 注意：服务端的模块级 ref 为所有请求共享，但它仅在「无 Nuxt 上下文」的模块初始化期被读取（此时尚无请求态语言），
 // 且 setLocale 在服务端不会写它（见下），因此只会返回兜底默认值，不存在跨请求语言串扰。
 const fallbackLocaleRef = ref<Locale>(FALLBACK_LOCALE)
+const fallbackOrganizationConfig = ref<Record<string, unknown>>({})
+
+export const useOrganizationLabelConfig = () => tryUseNuxtApp()
+  ? useState<Record<string, unknown>>('voicehub-organization-labels', () => ({}))
+  : fallbackOrganizationConfig
+
+const localizedOrganizationCache = new WeakMap<object, { signature: string; value: unknown }>()
+
+function localizeOrganization<T>(dictionary: T, labels: ReturnType<typeof organizationLabels>): T {
+  if (!dictionary || typeof dictionary !== 'object') return applyOrganizationLabels(dictionary, labels)
+  const signature = JSON.stringify(labels)
+  const cached = localizedOrganizationCache.get(dictionary)
+  if (cached?.signature === signature) return cached.value as T
+  const value = applyOrganizationLabels(dictionary, labels)
+  localizedOrganizationCache.set(dictionary, { signature, value })
+  return value
+}
 const getCurrentLocale = () =>
   tryUseNuxtApp()
     ? useState<Locale>('voicehub-locale', () => fallbackLocaleRef.value)
@@ -249,6 +267,8 @@ export function followSystemLocale(): Locale {
 
 export function useLocale() {
   const currentLocale = getCurrentLocale()
+  const labelConfig = useOrganizationLabelConfig()
+  const labels = computed(() => organizationLabels(labelConfig.value))
   // 偏好来源标志（manual=用户手动选择 / system=跟随系统）；无 Nuxt 上下文（模块加载期）时视为跟随系统
   const preferenceCookie = tryUseNuxtApp()
     ? useCookie<LocalePreference | undefined>(LOCALE_PREFERENCE_KEY, localeCookieOptions)
@@ -256,7 +276,7 @@ export function useLocale() {
   // 当前是否为「跟随系统」模式（未手动选择过语言）
   const isFollowingSystem = computed(() => preferenceCookie?.value !== 'manual')
   const withFallback = <Key extends keyof LocaleMessages>(key: Key) =>
-    computed(() => getMergedSection(currentLocale.value, key))
+    computed(() => localizeOrganization(getMergedSection(currentLocale.value, key), labels.value))
 
   return {
     currentLocale,

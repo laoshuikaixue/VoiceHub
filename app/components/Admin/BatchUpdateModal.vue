@@ -1421,7 +1421,7 @@ const parseExcelData = (jsonData) => {
     const rawUsername = getRowValue(row, columnKeys.username, ['用户名', 'username'])
     const rawName = getRowValue(row, columnKeys.name, ['姓名', 'name'])
     const rawGrade = getRowValue(row, columnKeys.grade, ['年级', 'grade'])
-    const rawClass = getRowValue(row, columnKeys.class, ['班级', 'class'])
+    const rawClass = getRowValue(row, columnKeys.class, ['班级', 'Class', 'class', '学院', 'College', 'college'])
     const rawExplicitNewUsername = getRowValue(row, columnKeys.newUsername, ['新用户名', 'new_username'])
     const username = rawUsername != null ? String(rawUsername).trim() : ''
     const name = rawName != null ? String(rawName).trim().toLowerCase() : ''

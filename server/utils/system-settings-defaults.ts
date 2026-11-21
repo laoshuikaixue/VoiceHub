@@ -26,6 +26,8 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   enablePlayTimeSelection: false,
   playSlotRequired: false,
   siteTitle: 'VoiceHub',
+  organizationLabelZh: '',
+  organizationLabelEn: '',
   siteLogoUrl: '/favicon.ico',
   schoolLogoHomeUrl: null,
   schoolLogoPrintUrl: null,
@@ -139,6 +141,8 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
 
 export const PUBLIC_SETTINGS_FIELDS = [
   'siteTitle',
+  'organizationLabelZh',
+  'organizationLabelEn',
   'siteLogoUrl',
   'schoolLogoHomeUrl',
   'schoolLogoPrintUrl',

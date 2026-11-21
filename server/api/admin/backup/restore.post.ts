@@ -1,5 +1,6 @@
 import { normalizeSubmittedTemplates } from '~~/server/utils/permission-admin'
-import { normalizePermissionTokens } from '~~/app/utils/admin-permissions'
+import { hasAdminPermission, normalizePermissionTokens, PRIV_ORGANIZATION_LABEL } from '~~/app/utils/admin-permissions'
+import { ORGANIZATION_LABEL_FIELDS, parseOrganizationLabel } from '~/utils/organization-labels'
 import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { defineEventHandler, readBody, readMultipartFormData } from 'h3'
 import { db } from '~/drizzle/db'
@@ -1216,6 +1217,16 @@ export default defineEventHandler(async (event) => {
                         break
 
                       case 'systemSettings':
+                        if (hasAdminPermission(user, PRIV_ORGANIZATION_LABEL)) {
+                          for (const field of ORGANIZATION_LABEL_FIELDS) {
+                            if (!Object.hasOwn(record, field)) continue
+                            const label = parseOrganizationLabel(record[field])
+                            if (label !== null) record[field] = label
+                            else delete record[field]
+                          }
+                        } else {
+                          for (const field of ORGANIZATION_LABEL_FIELDS) delete record[field]
+                        }
                         // 动态构建系统设置数据，自动跳过不存在的字段
                         let systemSettingsData: any = {}
                         const systemSettingsFields = [
@@ -1226,6 +1237,7 @@ export default defineEventHandler(async (event) => {
                           'enabledThemes',
                           'telemetryEnabled',
                           'siteTitle',
+                          ...ORGANIZATION_LABEL_FIELDS,
                           'siteLogoUrl',
                           'schoolLogoHomeUrl',
                           'schoolLogoPrintUrl',

@@ -1,5 +1,6 @@
 import { normalizeSubmittedTemplates } from '~~/server/utils/permission-admin'
-import { normalizePermissionTokens } from '~~/app/utils/admin-permissions'
+import { hasAdminPermission, normalizePermissionTokens, PRIV_ORGANIZATION_LABEL } from '~~/app/utils/admin-permissions'
+import { ORGANIZATION_LABEL_FIELDS, parseOrganizationLabel } from '~/utils/organization-labels'
 import { defineEventHandler, readBody } from 'h3'
 import { db } from '~/drizzle/db'
 import { restorePluginRecord } from '~~/server/utils/music-source-plugins/backup'
@@ -865,6 +866,16 @@ export default defineEventHandler(async (event) => {
           }
 
           case 'systemSettings': {
+            if (hasAdminPermission(user, PRIV_ORGANIZATION_LABEL)) {
+              for (const field of ORGANIZATION_LABEL_FIELDS) {
+                if (!Object.hasOwn(record, field)) continue
+                const label = parseOrganizationLabel(record[field])
+                if (label !== null) record[field] = label
+                else delete record[field]
+              }
+            } else {
+              for (const field of ORGANIZATION_LABEL_FIELDS) delete record[field]
+            }
             let systemSettingsData: any = {}
             const fields = [
               'enablePlayTimeSelection',
@@ -874,6 +885,7 @@ export default defineEventHandler(async (event) => {
               'enabledThemes',
               'telemetryEnabled',
               'siteTitle',
+              ...ORGANIZATION_LABEL_FIELDS,
               'siteLogoUrl',
               'schoolLogoHomeUrl',
               'schoolLogoPrintUrl',

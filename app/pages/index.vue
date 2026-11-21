@@ -849,7 +849,7 @@ import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import AppLoadingScreen from '~/components/UI/AppLoadingScreen.vue'
 
 import { useNotifications } from '~/composables/useNotifications'
-import { useSiteConfig, setSiteConfigData } from '~/composables/useSiteConfig'
+import { useSiteConfig } from '~/composables/useSiteConfig'
 import { useToast } from '~/composables/useToast'
 import { renderMarkdown } from '~/utils/markdown'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
@@ -872,6 +872,7 @@ const getMessage = (key, ...args) => getHomeText('messages', key, ...args)
 // 站点配置
 const {
   isLoaded,
+  setSiteConfigData,
   siteTitle,
   description: siteDescription,
   guidelines: submissionGuidelines,

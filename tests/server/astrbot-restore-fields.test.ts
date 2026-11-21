@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { ORGANIZATION_LABEL_FIELDS } from '../../app/utils/organization-labels.ts'
 
 const read = (url: string) => readFileSync(new URL(url, import.meta.url), 'utf8')
 
@@ -29,9 +30,11 @@ for (const [file, marker] of whitelists) {
   const source = read(`../../server/api/admin/backup/${file}`)
   const start = source.indexOf(marker)
   assert.ok(start > -1, `${file} 未找到系统设置恢复白名单`)
-  const fields = new Set(
-    [...source.slice(start, source.indexOf(']', start)).matchAll(/'([a-zA-Z0-9]+)'/g)].map((m) => m[1])
-  )
+  const whitelist = source.slice(start, source.indexOf(']', start))
+  const fields = new Set([...whitelist.matchAll(/'([a-zA-Z0-9]+)'/g)].map((m) => m[1]))
+  if (whitelist.includes('...ORGANIZATION_LABEL_FIELDS')) {
+    for (const field of ORGANIZATION_LABEL_FIELDS) fields.add(field)
+  }
 
   test(`${file} 的恢复白名单覆盖全部默认字段`, () => {
     const missing = [...defaultKeys].filter((key) => !fields.has(key))

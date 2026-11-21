@@ -4,6 +4,7 @@ import { stripTypeScriptTypes } from 'node:module'
 import { createError } from 'h3'
 import test from 'node:test'
 import * as permissions from '../../app/utils/admin-permissions.ts'
+import * as organizationLabels from '../../app/utils/organization-labels.ts'
 import * as scopes from '../../server/utils/admin-settings-scope.ts'
 import { resolvePermissionRouteGuard } from '../../server/utils/admin-permission-routes.ts'
 import {
@@ -124,7 +125,7 @@ function settingsRuntime() {
     } }) }) })
   }
   const deps = {
-    ...permissions, ...scopes, db, systemSettings: { id: 'id' },
+    ...permissions, ...organizationLabels, ...scopes, db, systemSettings: { id: 'id' },
     eq: () => null, defineEventHandler: (fn: any) => fn, readBody: async (event: any) => event.body,
     getMethod: (event: any) => event.method, getRouterParam: (event: any) => event.scope,
     createApiError, createError, SERVER_ERROR_CODES, maskSystemSettingsSecrets, SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, parseEsaCaptchaScenes,
