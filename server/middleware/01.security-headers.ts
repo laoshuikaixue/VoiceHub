@@ -4,7 +4,8 @@ import type { H3Event } from 'h3'
 export default defineEventHandler((event: H3Event) => {
   setHeader(event, 'X-Content-Type-Options', 'nosniff')
   setHeader(event, 'X-Frame-Options', 'SAMEORIGIN')
-  setHeader(event, 'Referrer-Policy', 'strict-origin-when-cross-origin')
+  const isBindPage = getRequestURL(event).pathname.startsWith('/bind/')
+  setHeader(event, 'Referrer-Policy', isBindPage ? 'no-referrer' : 'strict-origin-when-cross-origin')
   setHeader(event, 'Cross-Origin-Opener-Policy', 'same-origin')
   // 听歌识曲需要本站申请麦克风权限，跨源页面仍禁止使用。
   setHeader(event, 'Permissions-Policy', 'geolocation=(), microphone=(self), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()')

@@ -1,106 +1,266 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { fileURLToPath } from 'node:url'
+import { build } from 'esbuild'
+import { createApp, createRouter, eventHandler, toWebHandler } from 'h3'
 import { getTableConfig } from 'drizzle-orm/pg-core'
 import { astrbotBindTickets } from '../../app/drizzle/schema.ts'
 import {
-  ASTRBOT_BIND_TICKET_TTL_SECONDS,
-  createAstrbotBindTicket,
-  hashAstrbotBindTicket
+  createAstrbotBindTicket, hashAstrbotBindTicket
 } from '../../server/utils/astrbot-notification.ts'
 
-const source = (path: string) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8')
-const issueLink = source('server/api/bot/voicehub/bind-link.post.ts')
-const preview = source('server/api/notifications/astrbot/bind-ticket.get.ts')
-const confirm = source('server/api/notifications/astrbot/bind-ticket.post.ts')
-const page = source('app/pages/bind/[token].vue')
+const root = fileURLToPath(new URL('../..', import.meta.url))
+const tables = ['astrbotBindTickets', 'astrbotBindingCodes', 'astrbotBindings', 'systemSettings', 'users', 'authSessions'] as const
+const compiled = await build({
+  stdin: {
+    resolveDir: root,
+    contents: `
+      export { default as issue } from './server/api/bot/voicehub/bind-link.post.ts';
+      export { default as read } from './server/api/notifications/astrbot/bind-ticket.get.ts';
+      export { default as confirm } from './server/api/notifications/astrbot/bind-ticket.post.ts';
+      export { default as unbind } from './server/api/notifications/astrbot/unbind.post.ts';
+      export { default as botUnbind } from './server/api/bot/voicehub/unbind.post.ts';
+    `
+  },
+  bundle: true, platform: 'node', format: 'esm', write: false,
+  alias: { '~': `${root}/app`, '~~': root },
+  plugins: [{
+    name: 'bind-ticket-fixture',
+    setup(plugin) {
+      plugin.onResolve({ filter: /^(h3|dayjs(?:\/.*)?)$/ }, ({ path }) => ({ path: import.meta.resolve(path), external: true }))
+      plugin.onResolve({ filter: /^(~\/drizzle\/(db|schema)|drizzle-orm)$/ }, ({ path }) => ({ path, namespace: 'fixture' }))
+      plugin.onLoad({ filter: /.*/, namespace: 'fixture' }, ({ path }) => ({ contents: {
+        '~/drizzle/db': `export const db = globalThis.astrbotBindTestDb`,
+        '~/drizzle/schema': tables.map(table => `export const ${table} = new Proxy({ table: '${table}' }, {
+          get: (object, key) => key === 'table' ? object.table : key
+        });`).join('\n'),
+        'drizzle-orm': `export const eq = (col, value) => row => row[col] === value;
+          export const gt = (col, value) => row => row[col] > value;
+          export const lte = (col, value) => row => row[col] <= value;
+          export const isNull = col => row => row[col] == null;
+          export const and = (...predicates) => row => predicates.every(predicate => predicate(row));`
+      }[path] }))
+    }
+  }]
+})
 
-test('绑定票据只存摘要，票据原文长度足以抗枚举', () => {
+type Row = Record<string, any>
+type Records = Record<typeof tables[number], Row[]>
+const botToken = 'qa-bot-token'
+const umo = 'qq-instance:FriendMessage:123456'
+const endpoint = '/api/notifications/astrbot/bind-ticket'
+const accounts = [
+  { id: 1, username: 'alice', name: 'Alice', sessionId: 'alice-session', status: 'active', tokenVersion: 0 },
+  { id: 2, username: 'bob', name: 'Bob', sessionId: 'bob-session', status: 'active', tokenVersion: 0 }
+]
+let data: Records
+let publicHost: string
+let expireOnBind = false
+const app = createApp({ onError: () => {} })
+
+function project(row: Row, fields?: Record<string, string>) {
+  return fields ? Object.fromEntries(Object.entries(fields).map(([key, column]) => [key, row[column]])) : { ...row }
+}
+
+function mockDb(getData: () => Records) {
+  function query(table: { table: keyof Records }, op: 'select' | 'update' | 'delete', fields?: Record<string, string>) {
+    let predicate = (_row: Row) => true
+    let limit = Infinity
+    let update: Row = {}
+    const chain = {
+      where(fn: typeof predicate) { predicate = fn; return chain },
+      limit(count: number) { limit = count; return chain },
+      for() { return chain },
+      set(values: Row) { update = values; return chain },
+      returning(selection?: Record<string, string>) { fields = selection; return chain },
+      then(resolve: (rows: Row[]) => unknown, reject: (error: unknown) => unknown) {
+        return Promise.resolve().then(() => {
+          const derived = getData()
+          const rows = derived[table.table].filter(predicate).slice(0, limit)
+          if (op === 'update') rows.forEach(row => Object.assign(row, update))
+          if (op === 'delete') derived[table.table] = derived[table.table].filter(row => !rows.includes(row))
+          return rows.map(row => project(row, fields))
+        }).then(resolve, reject)
+      }
+    }
+    return chain
+  }
+  return {
+    select: (fields?: Record<string, string>) => ({ from: (table: { table: keyof Records }) => query(table, 'select', fields) }),
+    delete: (table: { table: keyof Records }) => query(table, 'delete'),
+    update: (table: { table: keyof Records }) => query(table, 'update'),
+    insert: (table: { table: keyof Records }) => ({ values: async (row: Row) => {
+      const rows = getData()[table.table]
+      if (table.table === 'astrbotBindings' && rows.some(item =>
+        item.umo === row.umo || (item.userId === row.userId && item.platform === row.platform)
+      )) throw Object.assign(new Error('duplicate binding'), { code: '23505' })
+      if (table.table === 'astrbotBindings' && expireOnBind) {
+        getData().astrbotBindTickets.forEach(ticket => { ticket.expiresAt = new Date(0) })
+      }
+      rows.push(row)
+    } }),
+    transaction: async (run: (tx: ReturnType<typeof mockDb>) => Promise<unknown>) => {
+      const snapshot = structuredClone(getData())
+      const result = await run(mockDb(() => snapshot))
+      Object.assign(getData(), snapshot)
+      return result
+    }
+  }
+}
+
+Object.assign(globalThis, {
+  astrbotBindTestDb: mockDb(() => data),
+  useRuntimeConfig: () => ({ public: { host: publicHost } })
+})
+const handlers = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].contents).toString('base64')}`)
+app.use(eventHandler(event => {
+  const account = accounts.find(user => String(user.id) === event.node.req.headers['x-qa-user'])
+  if (account) event.context.user = { ...account, sessionId: event.node.req.headers['x-qa-session'] || account.sessionId }
+}))
+app.use(createRouter()
+  .post('/api/bot/voicehub/bind-link', handlers.issue)
+  .get(endpoint, handlers.read)
+  .post(endpoint, handlers.confirm)
+  .post('/api/notifications/astrbot/unbind', handlers.unbind)
+  .post('/api/bot/voicehub/unbind', handlers.botUnbind))
+const handle = toWebHandler(app)
+
+test.beforeEach(() => {
+  expireOnBind = false
+  publicHost = 'https://voicehub.example.test'
+  data = {
+    astrbotBindTickets: [], astrbotBindings: [], astrbotBindingCodes: [],
+    systemSettings: [{ astrbotEnabled: true, astrbotToken: botToken, astrbotPlatforms: { qq: true } }],
+    users: accounts.map(account => ({ ...account, forcePasswordChange: false })),
+    authSessions: accounts.map(user => ({ id: user.sessionId, userId: user.id, expiresAt: new Date(Date.now() + 60_000) }))
+  }
+})
+
+async function request(path: string, options: { userId?: number; sessionId?: string; body?: Row; token?: string; forwardedHost?: string } = {}) {
+  const headers = new Headers({ 'content-type': 'application/json' })
+  if (options.userId) headers.set('x-qa-user', String(options.userId))
+  if (options.sessionId) headers.set('x-qa-session', options.sessionId)
+  if (options.token) headers.set('x-voicehub-token', options.token)
+  if (options.forwardedHost) headers.set('x-forwarded-host', options.forwardedHost)
+  const res = await handle(new Request(`https://voicehub.example.test${path}`, {
+    method: options.body ? 'POST' : 'GET', headers,
+    body: options.body ? JSON.stringify(options.body) : undefined
+  }))
+  return { status: res.status, headers: res.headers, body: await res.json() }
+}
+
+async function issue(target = umo) {
+  const res = await request('/api/bot/voicehub/bind-link', {
+    token: botToken, body: { umo: target, platform: 'aiocqhttp' }, forwardedHost: 'untrusted.example.test'
+  })
+  assert.equal(res.status, 200, JSON.stringify(res.body))
+  assert.equal(res.headers.get('cache-control'), 'no-store')
+  assert.match(res.body.url, /^https:\/\/voicehub\.example\.test\/bind\/[0-9a-f]{48}$/)
+  return res.body.url.split('/').at(-1)
+}
+
+const preview = (token: string, userId = 1) => request(`${endpoint}?token=${token}`, { userId })
+const confirm = (token: string, confirmation: string, userId = 1, sessionId?: string) =>
+  request(endpoint, { userId, sessionId, body: { token, confirmation } })
+
+test('票据使用随机原文和带密钥的摘要，数据库没有票据原文字段', () => {
   const ticket = createAstrbotBindTicket()
   assert.match(ticket, /^[a-f0-9]{48}$/)
-  assert.equal(hashAstrbotBindTicket(ticket), hashAstrbotBindTicket(ticket))
-  assert.notEqual(hashAstrbotBindTicket(ticket), ticket)
-  assert.ok(ASTRBOT_BIND_TICKET_TTL_SECONDS > 0 && ASTRBOT_BIND_TICKET_TTL_SECONDS <= 900)
-})
-
-test('票据表以 tokenHash 为主键并带过期索引，不存票据原文', () => {
+  assert.notEqual(hashAstrbotBindTicket(ticket, botToken), hashAstrbotBindTicket(ticket, 'rotated'))
   const config = getTableConfig(astrbotBindTickets)
-  const columnNames = config.columns.map((column) => column.name)
-  assert.ok(columnNames.includes('tokenHash'))
-  assert.equal(
-    columnNames.some((name) => name === 'token'),
-    false,
-    '不得存票据原文'
-  )
-  assert.deepEqual(columnNames.includes('consumedByUserId'), true, '幂等需要记录确认账号')
-  const tokenHash = config.columns.find((column) => column.name === 'tokenHash')
-  assert.equal(tokenHash?.primary, true, 'tokenHash 必须是主键')
-  assert.equal(tokenHash?.notNull, true)
-  assert.deepEqual(
-    config.indexes.map((index) => index.config.name),
-    ['AstrbotBindTicket_expires_idx']
-  )
+  assert.ok(config.columns.some(col => col.name === 'tokenHash' && col.primary))
+  assert.ok(!config.columns.some(col => col.name === 'token'))
+  assert.ok(config.indexes.some(index => index.config.name === 'AstrbotBindTicket_expires_idx'))
 })
 
-test('获取绑定链接：机器人令牌鉴权、校验私聊会话与平台开关，只返回链接不落库绑定', () => {
-  assert.match(issueLink, /ASTRBOT_TOKEN_HEADER/)
-  assert.match(issueLink, /equalAstrbotToken/)
-  assert.match(issueLink, /parseAstrbotPrivateUmo/)
-  assert.match(issueLink, /isAstrbotPlatformEnabled/)
-  assert.match(issueLink, /insert\(astrbotBindTickets\)/)
-  assert.match(issueLink, /hashAstrbotBindTicket\(ticket\)/)
-  assert.match(issueLink, /\/bind\/\$\{ticket\}/)
-  // 发链接阶段绝不能写绑定表：绑定只能由用户在浏览器确认后落库。
-  assert.doesNotMatch(issueLink, /astrbotBindings/)
+test('机器人签发必须通过令牌鉴权并使用受信配置；过期记录惰性清理', async () => {
+  const body = { umo, platform: 'aiocqhttp' }
+  assert.equal((await request('/api/bot/voicehub/bind-link', { body, token: 'wrong' })).status, 401)
+  publicHost = ''
+  assert.equal((await request('/api/bot/voicehub/bind-link', { body, token: botToken })).status, 503)
+  assert.equal(data.astrbotBindTickets.length, 0)
+  publicHost = 'https://voicehub.example.test'
+  const old = await issue()
+  data.astrbotBindTickets[0].expiresAt = new Date(0)
+  await issue()
+  assert.equal(data.astrbotBindTickets.length, 1)
+  assert.equal((await preview(old)).status, 400)
 })
 
-test('链接预览是只读的：GET 不得出现任何写操作', () => {
-  assert.doesNotMatch(preview, /\.insert\(/)
-  assert.doesNotMatch(preview, /\.update\(/)
-  assert.doesNotMatch(preview, /\.delete\(/)
-  assert.match(preview, /confirmedByMe/)
-  assert.match(preview, /available/)
+test('预览不创建绑定，只返回当前账号和目标；确认必须属于预览时的账号及登录会话', async () => {
+  const token = await issue()
+  assert.equal((await request(`${endpoint}?token=${token}`)).status, 401)
+  const res = await preview(token)
+  assert.equal(res.status, 200, JSON.stringify(res.body))
+  assert.equal(res.headers.get('cache-control'), 'no-store')
+  assert.deepEqual(res.body.account, { username: 'alice', name: 'Alice' })
+  assert.deepEqual(res.body.target, { adapter: 'aiocqhttp', instance: 'qq-instance', chatId: '123456' })
+  assert.match(res.body.expiresAtDisplay, /^\d{4}\/\d+\/\d+ \d+:\d{2}:\d{2}$/)
+  assert.match(res.body.confirmation, /^[a-f0-9]{64}$/)
+  assert.equal(data.astrbotBindings.length, 0)
+  assert.equal((await confirm(token, res.body.confirmation, 2)).status, 400)
+  assert.equal((await confirm(token, res.body.confirmation, 1, 'other-session')).status, 400)
+  assert.equal((await request(endpoint, { userId: 1, body: { token } })).status, 400)
+  assert.equal((await confirm(token, res.body.confirmation)).status, 200)
+  assert.equal((await confirm(token, res.body.confirmation)).status, 200)
+  assert.equal(data.astrbotBindings.length, 1)
+  assert.equal((await preview(token, 2)).status, 400)
 })
 
-test('确认绑定：登录态 + POST、原子消费票据、行锁与归属冲突、同账号重复确认幂等', () => {
-  assert.match(confirm, /event\.context\.user/)
-  assert.match(confirm, /readBody\(event\)/)
-  assert.match(confirm, /for\('update'\)/)
-  assert.match(confirm, /isNull\(astrbotBindTickets\.consumedAt\)/)
-  assert.match(confirm, /gt\(astrbotBindTickets\.expiresAt/)
-  assert.match(confirm, /consumedByUserId: user\.id/)
-  // 同账号重复确认返回成功，而不是"链接已使用"。
-  assert.match(confirm, /row\.consumedByUserId === user\.id[\s\S]{0,200}return \{ success: true/)
-  assert.match(confirm, /ASTRBOT_UMO_BOUND/)
-  assert.match(confirm, /onConflictDoUpdate/)
-  assert.match(confirm, /adapterToAstrbotPlatform\(row\.adapter\) !== row\.platform/)
+test('确认前会话被撤销、密码版本变化、平台关闭或机器人令牌轮换都不写绑定', async () => {
+  const token = await issue()
+  const { body } = await preview(token)
+  data.authSessions[0].revokedAt = new Date()
+  assert.equal((await confirm(token, body.confirmation)).status, 401)
+  delete data.authSessions[0].revokedAt
+  data.users[0].tokenVersion++
+  assert.equal((await confirm(token, body.confirmation)).status, 401)
+  data.users[0].tokenVersion--
+  data.systemSettings[0].astrbotPlatforms.qq = false
+  assert.equal((await confirm(token, body.confirmation)).status, 400)
+  data.systemSettings[0].astrbotPlatforms.qq = true
+  data.systemSettings[0].astrbotToken = 'rotated'
+  assert.equal((await preview(token)).status, 400)
+  assert.equal((await confirm(token, body.confirmation)).status, 400)
+  assert.equal(data.astrbotBindings.length, 0)
 })
 
-test('页面只在用户点击后发 POST 确认，GET 预览不改状态', () => {
-  assert.match(page, /method: 'POST'/)
-  assert.match(page, /'\/api\/notifications\/astrbot\/bind-ticket'/)
-  // 预览请求不得带 method，必须落在 GET 上。
-  const previewBlock = page.slice(
-    page.indexOf('const loadPreview'),
-    page.indexOf('const confirm =')
-  )
-  assert.match(previewBlock, /query: \{ token: token\.value \}/)
-  assert.doesNotMatch(previewBlock, /method:/)
+test('确认重新检查现有绑定，跨账号冲突不泄露归属或消耗票据', async () => {
+  const token = await issue()
+  const { body } = await preview(token)
+  const existing = { userId: 1, platform: 'qq', adapter: 'aiocqhttp', umo: `${umo}7`, boundAt: new Date() }
+  data.astrbotBindings.push(existing)
+  assert.equal((await preview(token)).body.conflict, 'account')
+  assert.equal((await confirm(token, body.confirmation)).status, 409)
+  assert.deepEqual(data.astrbotBindings, [existing])
+  data.astrbotBindings[0] = { ...existing, userId: 2, umo }
+  const conflict = (await preview(token)).body
+  assert.equal(conflict.conflict, 'chat')
+  assert.equal(conflict.current, null)
+  assert.equal(conflict.confirmation, null)
+  assert.ok(!JSON.stringify(conflict).includes('bob'))
+  assert.equal((await confirm(token, body.confirmation)).status, 409)
+  assert.equal(data.astrbotBindTickets[0].consumedAt, undefined)
 })
 
-test('绑定页只解构 useLocale 已导出的分区，不读取未定义的 account', () => {
-  // useLocale() 只导出 pages/common/auth 等分区；account 在 pages.account 下。
-  const destructure = page.match(/const \{([^}]*)\} = useLocale\(\)/)
-  assert.ok(destructure, '页面应显式解构 useLocale')
-  const keys = destructure[1]
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
-  assert.ok(
-    keys.every((key) => key === 'pages'),
-    `只能解构 pages，实际: ${keys.join(',')}`
-  )
-  // 直接读 account.value 会在运行时抛 TypeError（Sentry /bind/:token 500 的成因）。
-  assert.doesNotMatch(page, /\baccount\.value/)
-  assert.match(page, /pages\.value\?\.account\?\.social\?\.astrbot\?\.platforms/)
+test('绑定写入后如果票据已过期，事务回滚绑定', async () => {
+  const token = await issue()
+  const { body } = await preview(token)
+  expireOnBind = true
+  assert.equal((await confirm(token, body.confirmation)).status, 400)
+  assert.equal(data.astrbotBindings.length, 0)
+})
+
+test('网页和机器人解绑都作废绑定目标的待用票据与已确认票据', async () => {
+  for (const path of ['/api/notifications/astrbot/unbind', '/api/bot/voicehub/unbind']) {
+    const old = await issue()
+    const token = await issue()
+    const { body } = await preview(token)
+    assert.equal((await confirm(token, body.confirmation)).status, 200)
+    const res = await request(path, { userId: 1, token: botToken, body: { platform: 'qq', umo } })
+    assert.equal(res.status, 200)
+    assert.equal((await preview(old)).status, 400)
+    assert.equal((await confirm(token, body.confirmation)).status, 400)
+    assert.equal(data.astrbotBindings.length, 0)
+  }
 })

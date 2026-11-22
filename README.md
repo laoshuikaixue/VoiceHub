@@ -689,7 +689,7 @@ VoiceHub 实现了细粒度的权限控制系统：
 | REDIS_KEY_PREFIX       | 否   | Redis键命名空间，多环境共用Redis时应分别设置            | `voicehub:v2:`                                                                                                                                  |
 | NITRO_PRESET           | 否   | Nitro预设                                               | `vercel`                                                                                                                                        |
 | IS_SERVERLESS          | 否   | 声明为 Serverless 运行环境（连接池压低、备份改为直接返回数据、群事件投递器不启动）。平台未注入 `VERCEL`/`NETLIFY` 且未设置 `NITRO_PRESET` 时用它，如 EdgeOne Pages | `true` |
-| NUXT_PUBLIC_HOST       | 否   | 显式配置站点外部地址后启用内部 API 的 CORS 来源校验；未配置时仅对回环 Host（反向代理常见场景）跳过，云平台公开 Host 仍校验 | `https://your-app.com` |
+| NUXT_PUBLIC_HOST       | 否   | 站点外部地址，用于内部 API 来源校验；使用 AstrBot 绑定链接时必填 | `https://your-app.com` |
 | NUXT_PUBLIC_SEO_CONFIG | 否   | 用于自定义 PWA/SEO 配置的 JSON 字符串                   | `{"title":"VoiceHub校园广播站点歌系统","shortName":"校园广播","description":"校园广播站点歌系统 - 让你的声音被听见","logo":"/images/logo.png"}` |
 
 ## OAuth 配置
@@ -1368,7 +1368,7 @@ VoiceHub/
 │   │   │   │   ├── song-sources.get.ts # 机器人侧可用音源平台列表
 │   │   │   │   ├── song-resolve.post.ts # 机器人侧分享链接解析点歌
 │   │   │   │   ├── song-request.post.ts # 机器人侧点歌投稿
-│   │   │   │   ├── password-reset.post.ts # 机器人侧两步确认重置密码
+│   │   │   │   ├── password-reset.post.ts # 旧版机器人改密接口，提示改用网页恢复
 │   │   │   │   └── weekly-schedule.get.ts # 本周歌单（支持 format=text 纯文本）
 │   │   ├── open/           # 开放API（无需认证）
 │   │   │   ├── card-codes/          # 点歌券开放API
@@ -1494,6 +1494,7 @@ VoiceHub/
 │   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── astrbot-notification.ts # AstrBot 绑定码与目标校验
+│   │   ├── astrbot-bind-ticket.ts # AstrBot 绑定票据读取与状态校验
 │   │   ├── astrbot-adapters.js # 适配器平台映射（绑定鉴权与恢复共用）
 │   │   ├── astrbot-platforms.ts # 机器人四平台开关与目标筛选
 │   │   ├── astrbot-group.ts # 群广播目标与群事件配置规范化
@@ -1502,7 +1503,6 @@ VoiceHub/
 │   │   ├── astrbot-share-link.ts # 点歌分享链接识别与 ID 提取
 │   │   ├── astrbot-song-search.ts # 机器人点歌统一音源搜索与候选归一化
 │   │   ├── astrbot-song-sources.ts # 机器人点歌各音源原始搜索取数
-│   │   ├── astrbot-password-reset.ts # 机器人重置密码两步确认密封令牌
 │   │   ├── astrbot-weekly-config.ts # 本周歌单显示配置与排版归一化（唯一权威）
 │   │   ├── astrbot-error-telemetry.ts # 群聊异常通知的脱敏与限长
 │   │   ├── astrbot-backup.ts # 四平台绑定备份恢复

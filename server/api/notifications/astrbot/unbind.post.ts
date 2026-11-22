@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from 'h3'
 import { and, eq, isNull } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { astrbotBindingCodes, astrbotBindings, users } from '~/drizzle/schema'
+import { astrbotBindingCodes, astrbotBindings, astrbotBindTickets, users } from '~/drizzle/schema'
 
 import { parseAstrbotPlatform } from '~~/server/utils/astrbot-platforms'
 import { createApiError } from '~~/server/utils/apiError'
@@ -14,7 +14,10 @@ export default defineEventHandler(async (event) => {
   if (!platform) throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '平台无效')
   return db.transaction(async (tx) => {
     await tx.select({ id: users.id }).from(users).where(eq(users.id, user.id)).for('update')
-    await tx.delete(astrbotBindings).where(and(eq(astrbotBindings.userId, user.id), eq(astrbotBindings.platform, platform)))
+    const [removed] = await tx.delete(astrbotBindings)
+      .where(and(eq(astrbotBindings.userId, user.id), eq(astrbotBindings.platform, platform)))
+      .returning({ umo: astrbotBindings.umo })
+    if (removed) await tx.delete(astrbotBindTickets).where(eq(astrbotBindTickets.umo, removed.umo))
     // 解绑只清该平台未消费的码；已消费的保留，便于审计与幂等。
     await tx.delete(astrbotBindingCodes).where(and(eq(astrbotBindingCodes.userId, user.id),
       eq(astrbotBindingCodes.platform, platform), isNull(astrbotBindingCodes.consumedAt)))
