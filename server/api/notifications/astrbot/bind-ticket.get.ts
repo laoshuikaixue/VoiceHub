@@ -1,7 +1,7 @@
 import { defineEventHandler, getQuery, setResponseHeader } from 'h3'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { astrbotBindings } from '~/drizzle/schema'
+import { astrbotBindings, userIdentities } from '~/drizzle/schema'
 import { formatDateTime } from '~/utils/timeUtils'
 import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
@@ -15,6 +15,7 @@ import {
 } from '~~/server/utils/astrbot-bind-ticket'
 import { hashAstrbotBindTicket, makeAstrbotBindConfirmation } from '~~/server/utils/astrbot-notification'
 import { adapterToAstrbotPlatform, isAstrbotPlatformEnabled } from '~~/server/utils/astrbot-platforms'
+import { hasPermission, PRIV_ADMIN_CONSOLE } from '~/utils/admin-permissions'
 
 export default defineEventHandler(async (event) => {
   setResponseHeader(event, 'Cache-Control', 'no-store')
@@ -44,12 +45,18 @@ export default defineEventHandler(async (event) => {
     .where(eq(astrbotBindings.umo, row.umo)).limit(1)
   const conflict = owner && owner.id !== user.id ? 'chat' : current && !sameBinding ? 'account' : null
   const confirmedByMe = sameBinding
+  const canGrantPasswordReset = user.hasSetPassword && !conflict && !confirmedByMe &&
+    !hasPermission(user.perms ?? [], PRIV_ADMIN_CONSOLE)
+  const [totp] = canGrantPasswordReset ? await db.select({ userId: userIdentities.userId })
+    .from(userIdentities).where(and(eq(userIdentities.userId, user.id), eq(userIdentities.provider, 'totp'))).limit(1) : []
   return {
     success: true,
     account: { username: user.username, name: user.name },
     platform: row.platform,
     target: describeAstrbotBindChat(row),
-    current: current ? { ...describeAstrbotBindChat(current), boundAt: formatDateTime(current.boundAt) } : null,
+    current: current ? { ...describeAstrbotBindChat(current), boundAt: formatDateTime(current.boundAt),
+      passwordResetGranted: !!current.passwordResetGrantId } : null,
+    passwordResetVerification: canGrantPasswordReset ? (totp ? 'totp' : 'password') : null,
     conflict,
     confirmedByMe,
     confirmation: conflict || confirmedByMe ? null : makeAstrbotBindConfirmation(

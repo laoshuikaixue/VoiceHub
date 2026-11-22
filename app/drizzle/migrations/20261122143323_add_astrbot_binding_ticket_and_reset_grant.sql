@@ -9,4 +9,5 @@ CREATE TABLE "AstrbotBindTicket" (
 	"consumedByUserId" integer
 );
 --> statement-breakpoint
+ALTER TABLE "AstrbotBinding" ADD COLUMN "passwordResetGrantId" uuid;--> statement-breakpoint
 CREATE INDEX "AstrbotBindTicket_expires_idx" ON "AstrbotBindTicket" USING btree ("expiresAt");

@@ -117,6 +117,7 @@ function settingsRuntime() {
   }
   let writes = 0
   let invalidations = 0
+  let recoveryRevocations = 0
   const audits: Array<{ action: string; options: any }> = []
   const db = {
     transaction: async (work: (tx: any) => Promise<unknown>) => work(db),
@@ -125,13 +126,15 @@ function settingsRuntime() {
       where: () => ({ for: async () => [{ ...settings }] })
     }) }),
     delete: async (table: string) => { assert.equal(table, 'tickets'); invalidations++ },
-    update: () => ({ set: (patch: any) => ({ where: () => ({ returning: async () => {
+    update: (table: any) => ({ set: (patch: any) => ({ where: () => table === 'bindings'
+      ? (assert.deepEqual(patch, { passwordResetGrantId: null }), recoveryRevocations++, Promise.resolve())
+      : ({ returning: async () => {
       settings = { ...settings, ...patch }; writes++; return [{ ...settings }]
     } }) }) })
   }
   const deps = {
     ...permissions, ...scopes, db, systemSettings: { id: 'id' },
-    astrbotBindTickets: 'tickets',
+    astrbotBindTickets: 'tickets', astrbotBindings: 'bindings', isNotNull: () => null,
     isAstrbotBindingConfigChange: (before: any, after: any) =>
       ['astrbotToken', 'astrbotEnabled', 'astrbotPlatforms'].some(key => before[key] !== after[key]),
     eq: () => null, defineEventHandler: (fn: any) => fn, readBody: async (event: any) => event.body,
@@ -147,16 +150,19 @@ function settingsRuntime() {
   const writeSettings = handler('server/api/admin/system-settings/index.post.ts', deps)
   const scoped = handler('server/api/admin/system-settings/[scope].ts', { ...deps, readSettings, writeSettings })
   const call = (scope: string, method: string, codes: string[], body?: any) => scoped({ scope, method, body, context: { user: { perms: role(...codes) } } })
-  return { call, settings: () => settings, writes: () => writes, audits: () => audits, invalidations: () => invalidations }
+  return { call, settings: () => settings, writes: () => writes, audits: () => audits,
+    invalidations: () => invalidations, recoveryRevocations: () => recoveryRevocations }
 }
 
 test('机器人配置提交仅在绑定相关值变动时作废旧票据', async () => {
   const runtime = settingsRuntime()
   await runtime.call('astrbot', 'POST', ['astrbot:write'], { astrbotToken: SECRET_FIELD_MASK })
   assert.equal(runtime.invalidations(), 0)
+  assert.equal(runtime.recoveryRevocations(), 0)
   await runtime.call('astrbot', 'POST', ['astrbot:write'], { astrbotToken: 'next-token' })
   await runtime.call('astrbot', 'POST', ['astrbot:write'], { astrbotToken: 'bot-secret' })
   assert.equal(runtime.invalidations(), 2)
+  assert.equal(runtime.recoveryRevocations(), 2)
 })
 
 test('实际模块配置处理器读取和保存均裁剪字段，掩码不能回写成真实密码', async () => {

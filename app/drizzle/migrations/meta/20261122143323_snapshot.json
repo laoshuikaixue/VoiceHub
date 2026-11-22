@@ -1,5 +1,5 @@
 {
-  "id": "5a26e38a-fc86-40f5-b41d-59e3e00c9542",
+  "id": "806e65a2-ab91-4fb7-8f1f-28976447d673",
   "prevId": "26058f5b-05a4-42d7-b02d-c74fb182430e",
   "version": "7",
   "dialect": "postgresql",
@@ -559,6 +559,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "passwordResetGrantId": {
+          "name": "passwordResetGrantId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {

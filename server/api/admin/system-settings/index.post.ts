@@ -1,7 +1,7 @@
 import { hasAdminPermission, PRIV_LOGS } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
-import { astrbotBindTickets, systemSettings } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
+import { astrbotBindings, astrbotBindTickets, systemSettings } from '~/drizzle/schema'
+import { eq, isNotNull } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
 import { findSuperAdminOnlySettingFields, stripSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
 import { isValidAstrbotWeeklyConfigInput, normalizeAstrbotWeeklyConfig } from '~~/server/utils/astrbot-weekly-config'
@@ -1525,6 +1525,8 @@ export default defineEventHandler(async (event) => {
           const [after] = await tx.update(systemSettings).set(updateData).where(eq(systemSettings.id, id)).returning()
           if (before && after && isAstrbotBindingConfigChange(before, after)) {
             await tx.delete(astrbotBindTickets)
+            await tx.update(astrbotBindings).set({ passwordResetGrantId: null })
+              .where(isNotNull(astrbotBindings.passwordResetGrantId))
           }
           return after
         })

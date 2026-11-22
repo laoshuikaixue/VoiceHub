@@ -1368,7 +1368,7 @@ VoiceHub/
 │   │   │   │   ├── song-sources.get.ts # 机器人侧可用音源平台列表
 │   │   │   │   ├── song-resolve.post.ts # 机器人侧分享链接解析点歌
 │   │   │   │   ├── song-request.post.ts # 机器人侧点歌投稿
-│   │   │   │   ├── password-reset.post.ts # 旧版机器人改密接口，提示改用网页恢复
+│   │   │   │   ├── password-reset.post.ts # 私聊会话授权后的两步密码重置
 │   │   │   │   └── weekly-schedule.get.ts # 本周歌单（支持 format=text 纯文本）
 │   │   ├── open/           # 开放API（无需认证）
 │   │   │   ├── card-codes/          # 点歌券开放API
@@ -1495,6 +1495,7 @@ VoiceHub/
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── astrbot-notification.ts # AstrBot 绑定码与目标校验
 │   │   ├── astrbot-bind-ticket.ts # AstrBot 绑定票据读取与状态校验
+│   │   ├── astrbot-password-reset.ts # 机器人密码恢复授权校验与确认凭据
 │   │   ├── astrbot-adapters.js # 适配器平台映射（绑定鉴权与恢复共用）
 │   │   ├── astrbot-platforms.ts # 机器人四平台开关与目标筛选
 │   │   ├── astrbot-group.ts # 群广播目标与群事件配置规范化

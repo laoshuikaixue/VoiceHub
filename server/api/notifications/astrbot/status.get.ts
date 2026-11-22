@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
       return [platform, {
         enabled: !!settings?.astrbotEnabled && isAstrbotPlatformEnabled(settings.astrbotPlatforms, platform),
         bound: !!row,
+        passwordResetGranted: !!row?.passwordResetGrantId,
         boundAt: row?.boundAt ? formatDateTime(row.boundAt) : null,
         boundUser: row?.umo ? row.umo.split(':').at(-1) || null : null
       }]

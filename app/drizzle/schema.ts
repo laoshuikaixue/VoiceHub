@@ -290,7 +290,9 @@ export const astrbotBindings = pgTable('AstrbotBinding', {
   platform: text('platform').notNull(),
   adapter: text('adapter').notNull(),
   umo: text('umo').notNull(),
-  boundAt: timestamp('boundAt').defaultNow().notNull()
+  boundAt: timestamp('boundAt').defaultNow().notNull(),
+  // 仅由本人验证后授予，每次重新绑定使用不同标识。
+  passwordResetGrantId: uuid('passwordResetGrantId')
 }, (table) => [primaryKey({ columns: [table.userId, table.platform] }), uniqueIndex('AstrbotBinding_umo_unique').on(table.umo)]);
 
 // AstrBot 待投递队列：插件无法被 VoiceHub 访问（内网/NAT）时，由插件主动轮询取件。

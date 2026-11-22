@@ -4,13 +4,25 @@ import { fileURLToPath } from 'node:url'
 import { build } from 'esbuild'
 import { createApp, createRouter, eventHandler, toWebHandler } from 'h3'
 import { getTableConfig } from 'drizzle-orm/pg-core'
+import bcrypt from 'bcryptjs'
+import otplib from 'otplib'
 import { astrbotBindTickets } from '../../app/drizzle/schema.ts'
 import {
   createAstrbotBindTicket, hashAstrbotBindTicket
 } from '../../server/utils/astrbot-notification.ts'
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
-const tables = ['astrbotBindTickets', 'astrbotBindingCodes', 'astrbotBindings', 'systemSettings', 'users', 'authSessions'] as const
+const tables = ['astrbotBindTickets', 'astrbotBindingCodes', 'astrbotBindings', 'systemSettings', 'users', 'authSessions', 'userIdentities', 'passwordAuditLogs'] as const
+const fixtureModules: Record<string, string> = {
+  '~~/server/utils/permission-admin': 'export const lockPermissionChanges = async () => {}',
+  '~~/server/services/passwordSecurityService': [
+    'export const PASSWORD_AUDIT_ACTIONS = { STEP_UP: "STEP_UP", RESET_PASSWORD: "RESET_PASSWORD" };',
+    'export const consumePasswordRateLimit = async () => ({ allowed: true });',
+    'export const recordPasswordAudit = async () => {};',
+    'export const getPasswordAuditContext = () => ({ ipAddress: "127.0.0.1", userAgent: null });'
+  ].join(' '),
+  '~~/server/services/astrbotOutboxService': 'export const enqueueAstrbotNotifications = async () => {}'
+}
 const compiled = await build({
   stdin: {
     resolveDir: root,
@@ -20,6 +32,7 @@ const compiled = await build({
       export { default as confirm } from './server/api/notifications/astrbot/bind-ticket.post.ts';
       export { default as unbind } from './server/api/notifications/astrbot/unbind.post.ts';
       export { default as botUnbind } from './server/api/bot/voicehub/unbind.post.ts';
+      export { default as reset } from './server/api/bot/voicehub/password-reset.post.ts';
     `
   },
   bundle: true, platform: 'node', format: 'esm', write: false,
@@ -27,9 +40,11 @@ const compiled = await build({
   plugins: [{
     name: 'bind-ticket-fixture',
     setup(plugin) {
-      plugin.onResolve({ filter: /^(h3|dayjs(?:\/.*)?)$/ }, ({ path }) => ({ path: import.meta.resolve(path), external: true }))
+      plugin.onResolve({ filter: /^(h3|bcryptjs|otplib|dayjs(?:\/.*)?)$/ }, ({ path }) => ({ path: import.meta.resolve(path), external: true }))
+      plugin.onResolve({ filter: /passwordSecurityService|permission-admin|astrbotOutboxService/ }, ({ path }) =>
+        Object.hasOwn(fixtureModules, path) ? { path, namespace: 'fixture' } : undefined)
       plugin.onResolve({ filter: /^(~\/drizzle\/(db|schema)|drizzle-orm)$/ }, ({ path }) => ({ path, namespace: 'fixture' }))
-      plugin.onLoad({ filter: /.*/, namespace: 'fixture' }, ({ path }) => ({ contents: {
+      plugin.onLoad({ filter: /.*/, namespace: 'fixture' }, ({ path }) => ({ contents: fixtureModules[path] ?? {
         '~/drizzle/db': `export const db = globalThis.astrbotBindTestDb`,
         '~/drizzle/schema': tables.map(table => `export const ${table} = new Proxy({ table: '${table}' }, {
           get: (object, key) => key === 'table' ? object.table : key
@@ -38,7 +53,8 @@ const compiled = await build({
           export const gt = (col, value) => row => row[col] > value;
           export const lte = (col, value) => row => row[col] <= value;
           export const isNull = col => row => row[col] == null;
-          export const and = (...predicates) => row => predicates.every(predicate => predicate(row));`
+          export const and = (...predicates) => row => predicates.every(predicate => predicate(row));
+          export const sql = () => row => row.tokenVersion + 1;`
       }[path] }))
     }
   }]
@@ -49,6 +65,10 @@ type Records = Record<typeof tables[number], Row[]>
 const botToken = 'qa-bot-token'
 const umo = 'qq-instance:FriendMessage:123456'
 const endpoint = '/api/notifications/astrbot/bind-ticket'
+const resetEndpoint = '/api/bot/voicehub/password-reset'
+const currentPassword = 'QaCurrent!2026'
+const newPassword = 'QaReplacement!2026'
+const currentPasswordHash = await bcrypt.hash(currentPassword, 4)
 const accounts = [
   { id: 1, username: 'alice', name: 'Alice', sessionId: 'alice-session', status: 'active', tokenVersion: 0 },
   { id: 2, username: 'bob', name: 'Bob', sessionId: 'bob-session', status: 'active', tokenVersion: 0 }
@@ -77,7 +97,8 @@ function mockDb(getData: () => Records) {
         return Promise.resolve().then(() => {
           const derived = getData()
           const rows = derived[table.table].filter(predicate).slice(0, limit)
-          if (op === 'update') rows.forEach(row => Object.assign(row, update))
+          if (op === 'update') rows.forEach(row => Object.assign(row,
+            Object.fromEntries(Object.entries(update).map(([key, value]) => [key, typeof value === 'function' ? value(row) : value]))))
           if (op === 'delete') derived[table.table] = derived[table.table].filter(row => !rows.includes(row))
           return rows.map(row => project(row, fields))
         }).then(resolve, reject)
@@ -115,12 +136,13 @@ Object.assign(globalThis, {
 const handlers = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].contents).toString('base64')}`)
 app.use(eventHandler(event => {
   const account = accounts.find(user => String(user.id) === event.node.req.headers['x-qa-user'])
-  if (account) event.context.user = { ...account, sessionId: event.node.req.headers['x-qa-session'] || account.sessionId }
+  if (account) event.context.user = { ...account, hasSetPassword: true, sessionId: event.node.req.headers['x-qa-session'] || account.sessionId }
 }))
 app.use(createRouter()
   .post('/api/bot/voicehub/bind-link', handlers.issue)
   .get(endpoint, handlers.read)
   .post(endpoint, handlers.confirm)
+  .post(resetEndpoint, handlers.reset)
   .post('/api/notifications/astrbot/unbind', handlers.unbind)
   .post('/api/bot/voicehub/unbind', handlers.botUnbind))
 const handle = toWebHandler(app)
@@ -131,7 +153,8 @@ test.beforeEach(() => {
   data = {
     astrbotBindTickets: [], astrbotBindings: [], astrbotBindingCodes: [],
     systemSettings: [{ astrbotEnabled: true, astrbotToken: botToken, astrbotPlatforms: { qq: true } }],
-    users: accounts.map(account => ({ ...account, forcePasswordChange: false })),
+    users: accounts.map(account => ({ ...account, role: 'USER', password: currentPasswordHash, forcePasswordChange: false })),
+    userIdentities: [], passwordAuditLogs: [],
     authSessions: accounts.map(user => ({ id: user.sessionId, userId: user.id, expiresAt: new Date(Date.now() + 60_000) }))
   }
 })
@@ -162,6 +185,69 @@ async function issue(target = umo) {
 const preview = (token: string, userId = 1) => request(`${endpoint}?token=${token}`, { userId })
 const confirm = (token: string, confirmation: string, userId = 1, sessionId?: string) =>
   request(endpoint, { userId, sessionId, body: { token, confirmation } })
+
+const resetPassword = (body: Row, token = botToken) =>
+  request(resetEndpoint, { token, body: { umo, password: newPassword, ...body } })
+
+test('旧绑定和普通绑定默认没有密码恢复授权', async () => {
+  const token = await issue()
+  const { body } = await preview(token)
+  assert.equal(body.passwordResetVerification, 'password')
+  assert.equal((await confirm(token, body.confirmation)).body.passwordResetGranted, false)
+  for (const id of [undefined, null]) {
+    data.astrbotBindings[0].passwordResetGrantId = id
+    const result = await resetPassword({ step: 'init' })
+    assert.equal(result.status, 403)
+    assert.equal(result.body.data.code, 'ASTRBOT_PASSWORD_RESET_NOT_ALLOWED')
+  }
+})
+
+test('恢复授权要求当前密码与已启用的动态验证码，并拒绝后台账号', async () => {
+  const token = await issue()
+  const secret = otplib.authenticator.generateSecret()
+  data.userIdentities.push({ userId: 1, provider: 'totp', providerUserId: secret })
+  const { body } = await preview(token)
+  assert.equal(body.passwordResetVerification, 'totp')
+  const grant = (credentials: Row) => request(endpoint, { userId: 1,
+    body: { token, confirmation: body.confirmation, allowPasswordReset: true, ...credentials } })
+  assert.equal((await grant({ code: otplib.authenticator.generate(secret) })).status, 400)
+  assert.equal((await grant({ password: currentPassword })).status, 400)
+  data.users[0].permissions = ['priv:admin-console']
+  assert.equal((await grant({ password: currentPassword, code: otplib.authenticator.generate(secret) })).status, 403)
+  assert.equal(data.astrbotBindings.length, 0)
+  data.users[0].permissions = null
+  const result = await grant({ password: currentPassword, code: otplib.authenticator.generate(secret) })
+  assert.equal(result.status, 200)
+  assert.equal(result.body.passwordResetGranted, true)
+})
+
+test('获准的机器人两步重置密码，改密或解绑后旧确认失效', async (t) => {
+  const previousSecret = process.env.JWT_SECRET
+  process.env.JWT_SECRET = 'astrbot-bind-test-secret'
+  t.after(() => {
+    if (previousSecret === undefined) delete process.env.JWT_SECRET
+    else process.env.JWT_SECRET = previousSecret
+  })
+  const token = await issue()
+  const { body } = await preview(token)
+  const grant = await request(endpoint, { userId: 1,
+    body: { token, confirmation: body.confirmation, allowPasswordReset: true, password: currentPassword } })
+  assert.equal(grant.status, 200)
+  const first = await resetPassword({ step: 'init' })
+  assert.equal(first.status, 200)
+  const confirmation = { step: 'confirm', pendingToken: first.body.pendingToken }
+  assert.equal((await resetPassword(confirmation, 'wrong-token')).status, 401)
+  assert.equal((await resetPassword({ ...confirmation, password: 'QaDifferent!2026' })).status, 400)
+  data.users[0].permissions = ['priv:admin-console']
+  assert.equal((await resetPassword(confirmation)).status, 403)
+  data.users[0].permissions = null
+  assert.equal((await resetPassword(confirmation)).status, 200)
+  assert.equal(data.users[0].tokenVersion, 1)
+  assert.equal(await bcrypt.compare(newPassword, data.users[0].password), true)
+  assert.equal((await resetPassword(confirmation)).status, 400)
+  await request('/api/notifications/astrbot/unbind', { userId: 1, body: { platform: 'qq' } })
+  assert.equal((await resetPassword({ step: 'init' })).status, 403)
+})
 
 test('票据使用随机原文和带密钥的摘要，数据库没有票据原文字段', () => {
   const ticket = createAstrbotBindTicket()

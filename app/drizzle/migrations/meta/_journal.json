@@ -432,8 +432,8 @@
     {
       "idx": 61,
       "version": "7",
-      "when": 1795280339108,
-      "tag": "20261121165858_add_astrbot_bind_ticket",
+      "when": 1795358003972,
+      "tag": "20261122143323_add_astrbot_binding_ticket_and_reset_grant",
       "breakpoints": true
     }
   ]
