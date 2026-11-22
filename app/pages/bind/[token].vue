@@ -76,7 +76,7 @@ import { useServerErrors } from '~/composables/useLocaleText'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 
 const route = useRoute()
-const { pages, account } = useLocale()
+const { pages } = useLocale()
 const { localize } = useServerErrors()
 const locale = computed(() => pages.value?.bindTicket || {})
 
@@ -91,7 +91,8 @@ const errorMessage = ref('')
 const platformLabel = computed(() => {
   const key = preview.value?.platform
   if (!key) return '-'
-  return account.value?.astrbot?.platforms?.[key] || key
+  // 账号设置页的机器人平台名称是唯一来源，缺失时退回平台键本身。
+  return pages.value?.account?.social?.astrbot?.platforms?.[key] || key
 })
 
 const loadPreview = async () => {

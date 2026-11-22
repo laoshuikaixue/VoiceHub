@@ -87,3 +87,20 @@ test('页面只在用户点击后发 POST 确认，GET 预览不改状态', () =
   assert.match(previewBlock, /query: \{ token: token\.value \}/)
   assert.doesNotMatch(previewBlock, /method:/)
 })
+
+test('绑定页只解构 useLocale 已导出的分区，不读取未定义的 account', () => {
+  // useLocale() 只导出 pages/common/auth 等分区；account 在 pages.account 下。
+  const destructure = page.match(/const \{([^}]*)\} = useLocale\(\)/)
+  assert.ok(destructure, '页面应显式解构 useLocale')
+  const keys = destructure[1]
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+  assert.ok(
+    keys.every((key) => key === 'pages'),
+    `只能解构 pages，实际: ${keys.join(',')}`
+  )
+  // 直接读 account.value 会在运行时抛 TypeError（Sentry /bind/:token 500 的成因）。
+  assert.doesNotMatch(page, /\baccount\.value/)
+  assert.match(page, /pages\.value\?\.account\?\.social\?\.astrbot\?\.platforms/)
+})
