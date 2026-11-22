@@ -21,12 +21,13 @@ export default defineEventHandler(async (event) => {
 
     await withPermissionTransaction(event, async (tx, currentTemplates) => {
       const { id: operatorId, perms: operatorPerms } = event.context.user
+      const rows = await loadPermissionHolderRows(tx)
       assertRoleTemplateExpansionWithinOperator(
         currentTemplates,
         nextTemplates,
-        operatorPerms ?? []
+        operatorPerms ?? [],
+        rows.find((row) => row.id === operatorId)
       )
-      const rows = await loadPermissionHolderRows(tx)
       assertProtectedCodesSurvive(
         collectCodeHolders(rows, currentTemplates, PROTECTED_PRIV_CODES),
         collectCodeHolders(rows, nextTemplates, PROTECTED_PRIV_CODES),
@@ -38,7 +39,7 @@ export default defineEventHandler(async (event) => {
       targetType: 'permission',
       summary: { roleKeys: Object.keys(nextTemplates ?? {}) }
     })
-    return { success: true, matrix: await buildPermissionMatrix() }
+    return { success: true, matrix: await buildPermissionMatrix(event.context.user.id) }
   } catch (error: any) {
     if (error?.statusCode) throw error
     console.error('[Permissions] 保存角色权限模板失败:', error)

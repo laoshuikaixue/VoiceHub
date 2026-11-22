@@ -9,6 +9,7 @@ import {
   ADMIN_PERMISSION_CODES,
   MAX_SUPER_ADMIN_ACCOUNTS,
   PRIV_ADMIN_CONSOLE,
+  PRIV_ROLE_TEMPLATE,
   PROTECTED_PRIV_CODES,
   ROLE_PERMISSION_TEMPLATES_DEFAULT,
   SUPER_ADMIN_ROLE,
@@ -16,6 +17,7 @@ import {
   getRoleTemplateKeys,
   isValidRoleKey,
   canAccessAdminConsole,
+  hasAdminPermission,
   hasPermission,
   isValidPermissionToken,
   normalizePermissionTokens,
@@ -148,18 +150,37 @@ export function findGrantChangesBeyondOperator(
   return findGrantsBeyondOperator(changed, operatorPerms)
 }
 
+// 仅恢复超管模板原本已授予、后来被单项拒绝的权限。
+export function findRecoverableSuperAdminTemplateCodes(
+  operator: PermissionHolderRow | undefined,
+  templates: Record<string, unknown> | null | undefined
+): string[] {
+  if (operator?.role !== SUPER_ADMIN_ROLE ||
+    !hasAdminPermission({ perms: resolveEffectivePermissions(operator, templates) }, PRIV_ROLE_TEMPLATE)) return []
+  const template = resolveRoleTemplate(SUPER_ADMIN_ROLE, templates)
+  const explicit = normalizePermissionTokens(operator.permissions)
+  return ADMIN_PERMISSION_CODES.filter((code) => {
+    const denial = `!${code}`
+    if (!template.includes(denial)) return false
+    const restored = template.filter((token) => token !== denial)
+    return hasPermission(restored, code) &&
+      hasPermission([...restored, ...explicit], code)
+  })
+}
+
 export function findRoleTemplateChangesBeyondOperator(
   before: Record<string, unknown> | null | undefined,
   after: Record<string, unknown>,
-  operatorPerms: readonly string[]
+  operatorPerms: readonly string[],
+  operator?: PermissionHolderRow
 ): string[] {
-  return getRoleTemplateKeys({ ...before, ...after }).flatMap((role) =>
-    findGrantChangesBeyondOperator(
-      resolveRoleTemplate(role, before),
-      resolveRoleTemplate(role, after),
-      operatorPerms
-    ).map((token) => `${role}:${token}`)
-  )
+  const recoverable = new Set(findRecoverableSuperAdminTemplateCodes(operator, before).map((code) => `!${code}`))
+  return getRoleTemplateKeys({ ...before, ...after }).flatMap((role) => {
+    const next = resolveRoleTemplate(role, after)
+    return findGrantChangesBeyondOperator(resolveRoleTemplate(role, before), next, operatorPerms)
+      .filter((token) => !(role === SUPER_ADMIN_ROLE && recoverable.has(token) && !next.includes(token)))
+      .map((token) => `${role}:${token}`)
+  })
 }
 
 export function findAddedPermissionsBeyondOperator(

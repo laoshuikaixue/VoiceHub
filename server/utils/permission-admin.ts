@@ -22,6 +22,7 @@ import {
   findAddedPermissionsBeyondOperator,
   findGrantsBeyondOperator,
   findGrantChangesBeyondOperator,
+  findRecoverableSuperAdminTemplateCodes,
   findRoleTemplateChangesBeyondOperator,
   findProtectedCodeLoss,
   findProtectedLossAfterReplacements,
@@ -114,9 +115,10 @@ export async function loadPermissionHolderRows(
 export function assertRoleTemplateExpansionWithinOperator(
   before: Record<string, unknown> | null | undefined,
   after: Record<string, string[]>,
-  operatorPerms: readonly string[]
+  operatorPerms: readonly string[],
+  operator?: PermissionHolderRow
 ): void {
-  const violations = findRoleTemplateChangesBeyondOperator(before, after, operatorPerms)
+  const violations = findRoleTemplateChangesBeyondOperator(before, after, operatorPerms, operator)
   if (violations.length) {
     throw createApiError(
       403,
@@ -328,7 +330,7 @@ export async function recordSuperAdminRoleChange(
 }
 
 // 权限矩阵页数据：模板现状、内置默认、活跃用户持有者数与角色分布
-export async function buildPermissionMatrix() {
+export async function buildPermissionMatrix(operatorId: number) {
   const settings = await getSystemSettingsCached()
   const configured = settings?.rolePermissionTemplates ?? null
   const templates = await getRolePermissionTemplatesCached()
@@ -353,6 +355,7 @@ export async function buildPermissionMatrix() {
     groups: groupPermissionCodes(),
     roles: getRoleTemplateKeys(templates),
     protectedCodes: [...PROTECTED_PRIV_CODES],
+    recoverableSuperAdminCodes: findRecoverableSuperAdminTemplateCodes(rows.find((row) => row.id === operatorId), templates),
     templates: Object.fromEntries(
       getRoleTemplateKeys(templates).map((role) => [role, normalizePermissionTokens(templates[role] ?? [])])
     ) as Record<string, string[]>,

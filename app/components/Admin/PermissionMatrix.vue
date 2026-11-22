@@ -120,7 +120,7 @@
                     type="checkbox"
                     class="w-3.5 h-3.5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                     :checked="holds(role, code)"
-                    :disabled="saving || !can(code)"
+                    :disabled="saving || !canToggle(role, code)"
                     @change="toggle(role, code)"
                   >
                 </label>
@@ -219,7 +219,7 @@ import InputField from '~/components/UI/Common/InputField.vue'
 import { useToast } from '~/composables/useToast'
 import { useLocale } from '~/utils/locale'
 import { useLocaleText, useServerErrors } from '~/composables/useLocaleText'
-import { hasPermission, isValidRoleKey, toggleExplicitPermission } from '~/utils/admin-permissions'
+import { hasPermission, isValidRoleKey, SUPER_ADMIN_ROLE, toggleExplicitPermission } from '~/utils/admin-permissions'
 import { usePermissions } from '~/composables/usePermissions'
 import { useAuth } from '~/composables/useAuth'
 
@@ -240,6 +240,7 @@ const matrix = ref({
   codeHolders: {},
   holdersByRole: {},
   protectedCodes: [],
+  recoverableSuperAdminCodes: [],
   customizedRoles: [],
   explicitGrantUsers: 0,
   holderTotal: 0
@@ -267,6 +268,9 @@ const domainLabel = (domain) =>
 const isProtected = (code) => matrix.value.protectedCodes.includes(code)
 
 const holds = (role, code) => hasPermission(draft.value[role] || [], code)
+const canToggle = (role, code) => can('priv:role-template') && (
+  can(code) || (role === SUPER_ADMIN_ROLE && matrix.value.recoverableSuperAdminCodes?.includes(code))
+)
 
 const differsFromDefault = (code) =>
   matrix.value.roles.some(
@@ -340,8 +344,12 @@ const metrics = computed(() => [
 ])
 
 const toggle = (role, code) => {
-  if (!can(code)) return
-  draft.value[role] = toggleExplicitPermission([], draft.value[role] || [], code)
+  if (saving.value || !canToggle(role, code)) return
+  const template = draft.value[role] || []
+  // 保留超管模板的原授权，取消勾选时记录单项拒绝，以便恢复。
+  draft.value[role] = role === SUPER_ADMIN_ROLE && template.includes(code) && hasPermission(template, code)
+    ? [...template, `!${code}`]
+    : toggleExplicitPermission([], template, code)
 }
 
 const resetToDefault = () => {

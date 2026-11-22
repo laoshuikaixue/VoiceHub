@@ -288,6 +288,39 @@ test('模板编辑不能新增或恢复操作者未持有的权限', () => {
   )
 })
 
+test('超级管理员可撤销自身角色模板的单项拒绝，其他角色和显式授权继续受限', () => {
+  const code = 'playback:control'
+  const deny = `!${code}`
+  const superAdmin = { id: 1, role: 'SUPER_ADMIN', permissions: null }
+  for (const grants of [['*'], [consoleCode, templateCode, code]]) {
+    const baseline = { ...defaults, SUPER_ADMIN: [...grants, deny], ADMIN: [consoleCode, code, deny] }
+    const actorPerms = resolveEffectivePermissions(superAdmin, baseline)
+    assert.equal(hasPermission(actorPerms, code), false)
+    assert.deepEqual(policy.findRecoverableSuperAdminTemplateCodes(superAdmin, baseline), [code])
+    assert.deepEqual(policy.findRoleTemplateChangesBeyondOperator(
+      baseline, { ...baseline, SUPER_ADMIN: grants }, actorPerms, superAdmin
+    ), [])
+    assert.deepEqual(policy.findRoleTemplateChangesBeyondOperator(
+      baseline, { ...baseline, SUPER_ADMIN: grants, ADMIN: [consoleCode, code] }, actorPerms, superAdmin
+    ), [`ADMIN:${deny}`])
+    assert.deepEqual(policy.findGrantChangesBeyondOperator([deny], [], actorPerms), [deny])
+    const delegate = { id: 2, role: 'ADMIN', permissions: [templateCode] }
+    assert.deepEqual(policy.findRoleTemplateChangesBeyondOperator(
+      baseline, { ...baseline, SUPER_ADMIN: grants }, resolveEffectivePermissions(delegate, baseline), delegate
+    ), [`SUPER_ADMIN:${deny}`])
+    assert.deepEqual(policy.findRecoverableSuperAdminTemplateCodes({ ...superAdmin, permissions: [deny] }, baseline), [])
+    assert.deepEqual(policy.findRecoverableSuperAdminTemplateCodes(
+      superAdmin, { ...baseline, SUPER_ADMIN: [...grants, deny, '!playback:*'] }
+    ), [])
+  }
+  const neverGranted = { ...defaults, SUPER_ADMIN: [consoleCode, templateCode, deny] }
+  assert.deepEqual(policy.findRecoverableSuperAdminTemplateCodes(superAdmin, neverGranted), [])
+  assert.deepEqual(policy.findRoleTemplateChangesBeyondOperator(
+    neverGranted, { ...neverGranted, SUPER_ADMIN: [consoleCode, templateCode, code] },
+    resolveEffectivePermissions(superAdmin, neverGranted), superAdmin
+  ), [`SUPER_ADMIN:${deny}`, `SUPER_ADMIN:${code}`])
+})
+
 test('显式权限可反复切换，并支持通配授予和通配拒绝', () => {
   for (const template of [[], ['songs:write']]) {
     let explicit: string[] = []
