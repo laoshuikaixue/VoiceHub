@@ -1942,7 +1942,7 @@ export const pages = {
       anonymousSubmission: '匿名投稿',
       submissionNoteApprovalHint: '公开留言需管理员审核通过后展示',
       recommendation: '推荐语（选填）',
-      recommendationVisibility: '后台可查看',
+      recommendationVisibility: '未勾选公开时，仅你和有权限的管理员可查看。',
       submissionNotePlaceholder: '写一句推荐这首歌的理由，最多 50 字',
       coverAlt: '封面',
       albumDetailsTitle: '点击查看专辑详情',

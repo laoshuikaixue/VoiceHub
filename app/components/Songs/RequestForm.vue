@@ -251,7 +251,15 @@
               class="w-full rounded-lg border border-border-secondary bg-bg-tertiary p-2 text-text-primary"
               :placeholder="locale.submissionNotePlaceholder"
             />
-            <span>{{ submissionNote.length }}/50 · {{ locale.recommendationVisibility }}</span>
+            <div class="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <label class="inline-flex items-center gap-2">
+                <input v-model="submissionNotePublic" type="checkbox" :disabled="!hasRecommendation" />
+                <span>{{ locale.publicToUsers }}</span>
+              </label>
+              <span>{{ submissionNote.length }}/50</span>
+            </div>
+            <p v-if="!publishRecommendation">{{ locale.recommendationVisibility }}</p>
+            <p v-else-if="submissionNoteRequiresApproval">{{ locale.submissionNoteApprovalHint }}</p>
           </div>
 
           <!-- 音乐平台选择按钮 -->
@@ -1188,8 +1196,6 @@
     <!-- 投稿选项弹窗 -->
     <SubmissionOptionsModal
       v-model:show="showSubmissionOptions"
-      v-model:note="submissionNote"
-      v-model:note-public="submissionNotePublic"
       v-model:note-anonymous="submissionAnonymous"
       v-model:card-code-draft="cardCodeDraft"
       :mode="submissionOptionsMode"
@@ -1201,7 +1207,6 @@
       :today="todayPlayDate"
       :format-label="formatPlayTimeOptionLabel"
       :show-anonymous="allowAnonymousSubmission && !!user"
-      :note-approval-required="submissionNoteRequiresApproval"
       :show-card-code="cardCodeEnabled"
       :card-code="cardCode"
       :card-code-required="requireCardCodeForRequests"
@@ -1311,6 +1316,8 @@ const platformTouched = ref(false) // 用户是否手动切换过平台，切换
 const preferredPlayTimeId = ref('')
 const submissionNote = ref('')
 const submissionNotePublic = ref(false)
+const hasRecommendation = computed(() => enableSubmissionRemarks.value && !!submissionNote.value.trim())
+const publishRecommendation = computed(() => hasRecommendation.value && submissionNotePublic.value)
 const submissionAnonymous = ref(false)
 const cardCode = ref('')
 const cardCodeDraft = ref('')
@@ -2816,14 +2823,8 @@ const submissionOptionsText = computed(() => {
       locale.value.playSlotDateOptionalHint || '未指定播出日期，具体播出日由后台排期决定',
     noSlotsForDate: locale.value.noSlotsForDate || '该日期没有开放的播出时段，请更换日期',
     timeRequiredError: locale.value.playSlotTimeRequiredError || '请选择期望播出时段',
-    // 投稿留言
-    noteLabel: locale.value.submissionNote || '投稿留言',
     anonymousLabel: locale.value.anonymousSubmission || '匿名投稿',
-    publicToUsers: locale.value.publicToUsers || '备注留言公开给已登录用户',
     anonymous: locale.value.anonymousSubmission || '匿名投稿',
-    approvalHint: locale.value.submissionNoteApprovalHint || '公开留言需管理员审核通过后展示',
-    notePlaceholder:
-      locale.value.submissionNotePlaceholder || '写一句推荐这首歌的理由，最多 50 字',
     // 点歌券
     cardCodeLabel: locale.value.cardCode || '点歌券',
     cardCodePlaceholder: locale.value.cardCodePlaceholder || '请输入点歌券',
@@ -2906,10 +2907,10 @@ watch(enableCollaborativeSubmission, (enabled) => {
 })
 
 watch(enableSubmissionRemarks, (enabled) => {
-  if (!enabled) {
-    submissionNote.value = ''
-    submissionNotePublic.value = false
-  }
+  if (!enabled) submissionNote.value = ''
+})
+watch(hasRecommendation, (hasNote) => {
+  if (!hasNote) submissionNotePublic.value = false
 })
 
 watch(allowAnonymousSubmission, (enabled) => {
@@ -3808,7 +3809,7 @@ const submitSong = async (result, options = {}) => {
       const replayResult = await songService.requestReplay(replayTargetSong.id, {
         preferredPlayTimeId: preferredPlayTimeId.value ? parseInt(preferredPlayTimeId.value) : null,
         submissionNote: submissionNote.value.trim() || null,
-        submissionNotePublic: submissionNotePublic.value,
+        submissionNotePublic: publishRecommendation.value,
         submissionAnonymous: submissionAnonymous.value,
       })
 
@@ -3922,7 +3923,7 @@ const submitSong = async (result, options = {}) => {
       selectionToken: result.selectionToken,
       durationSeconds: submissionDurationSeconds,
       submissionNote: submissionNote.value.trim() || null,
-      submissionNotePublic: submissionNotePublic.value,
+      submissionNotePublic: publishRecommendation.value,
       submissionAnonymous: submissionAnonymous.value,
       collaborators: collaborators.value.map((u) => u.id),
       bilibiliCid: bilibiliCid || null,
@@ -3991,7 +3992,7 @@ const handleSubmit = async (fromSlotModal = false) => {
       musicPlatform: platform.value,
       musicId: null, // 手动输入时没有musicId
       submissionNote: submissionNote.value.trim() || null,
-      submissionNotePublic: submissionNotePublic.value,
+      submissionNotePublic: publishRecommendation.value,
       submissionAnonymous: submissionAnonymous.value,
       collaborators: collaborators.value.map((u) => u.id)
     }
@@ -4394,7 +4395,7 @@ const handleManualSubmit = async (fromSlotModal = false) => {
       musicPlatform: hasManualPlayUrl ? null : platform.value,
       musicId: null, // 手动输入时没有musicId
       submissionNote: submissionNote.value.trim() || null,
-      submissionNotePublic: submissionNotePublic.value,
+      submissionNotePublic: publishRecommendation.value,
       submissionAnonymous: submissionAnonymous.value,
     }
 

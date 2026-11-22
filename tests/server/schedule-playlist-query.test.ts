@@ -210,6 +210,21 @@ test('公共主查询按日期过滤，日期仅通过参数传递，并保留�
   assert.ok(!query.sql.includes('2026-10-20'))
 })
 
+test('推荐语只向已登录用户公开，待审和私密内容仅投稿人及授权管理员可见', async () => {
+  const date = '2026-10-20'
+  const notes = [
+    publicRow(date, { requesterId: 7, effectiveSubmissionNote: '待审', effectiveSubmissionNotePublic: false, effectiveSubmissionNotePublicStatus: 'pending' }),
+    publicRow(date, { id: 2, songId: 11, effectiveSubmissionNote: '通过', effectiveSubmissionNotePublic: true, effectiveSubmissionNotePublicStatus: 'approved' }),
+    publicRow(date, { id: 3, songId: 12, effectiveSubmissionNote: '私密', effectiveSubmissionNotePublic: false }),
+    publicRow(date, { id: 4, songId: 13, effectiveSubmissionNote: '拒绝', effectiveSubmissionNotePublic: false, effectiveSubmissionNotePublicStatus: 'rejected' })
+  ]
+  publicFixture({ rows: notes })
+  const read = async (role?: string) => (await publicHandler(eventFor({ date }, role))).map((item) => item.song.submissionNote)
+  assert.deepEqual(await read(), [null, null, null, null])
+  assert.deepEqual(await read('USER'), ['待审', '通过', null, null])
+  assert.deepEqual(await read('ADMIN'), ['待审', '通过', '私密', '拒绝'])
+})
+
 test('日期、学期与普通用户可见范围取交集，参数序号连续', async () => {
   const calls = publicFixture({ settings: { scheduleDaysBeforeEnabled: true, scheduleDaysBefore: 1,
     scheduleDaysAfterEnabled: true, scheduleDaysAfter: 1 } })

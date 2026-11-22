@@ -1997,7 +1997,7 @@ export const pages = {
       anonymousSubmission: 'Anonymous submission',
       submissionNoteApprovalHint: 'Public note will show after admin approval.',
       recommendation: 'Recommendation (optional)',
-      recommendationVisibility: 'Visible in the admin console',
+      recommendationVisibility: 'Private notes are visible to you and authorized admins.',
       submissionNotePlaceholder: 'Why do you recommend this song? Up to 50 characters.',
       coverAlt: 'Cover',
       albumDetailsTitle: 'Click to view album details',

@@ -327,7 +327,7 @@
             </div>
 
             <div
-              v-if="formData.enableSubmissionRemarks && canManageSensitiveSettings"
+              v-if="formData.enableSubmissionRemarks"
               class="ml-4 mr-2 mb-2 pl-4 border-l border-border-secondary space-y-2 transition-opacity"
             >
               <div
@@ -340,7 +340,7 @@
                 <input
                   v-model="formData.submissionNoteRequiresApproval"
                   type="checkbox"
-                  :disabled="!formData.enableSubmissionRemarks"
+                  :disabled="!can('system-settings:write')"
                   class="w-5 h-5 rounded border-border-secondary bg-bg-secondary cursor-pointer disabled:cursor-not-allowed"
                 />
               </div>

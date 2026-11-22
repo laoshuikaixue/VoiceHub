@@ -381,8 +381,7 @@ export default defineEventHandler(async (event) => {
             : null
       const isNoteOwner = Boolean(user && noteOwnerId !== null && noteOwnerId === user.id)
       const canViewSubmissionNote =
-        Boolean(effectiveSubmissionNote) &&
-        (effectiveNotePublic || Boolean(user && (isAdmin || isNoteOwner)))
+        Boolean(user && effectiveSubmissionNote && (effectiveNotePublic || isAdmin || isNoteOwner))
       // 歌曲自身投稿留言的公开状态，与重播申请留言相互独立
       const songNotePublic =
         row.submissionNotePublic === true &&

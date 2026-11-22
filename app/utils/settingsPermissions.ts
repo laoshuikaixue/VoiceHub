@@ -85,7 +85,6 @@ export const SUPER_ADMIN_ONLY_SETTING_FIELDS = [
   'showBeianIcon',
   'submissionGuidelines',
   'showBlacklistKeywords',
-  'submissionNoteRequiresApproval',
   // 全站统计代码与自定义 CSS：原样注入 SSR 页面
   'statisticsCode',
   'statisticsCodeEnabled',

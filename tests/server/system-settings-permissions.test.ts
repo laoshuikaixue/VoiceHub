@@ -64,12 +64,13 @@ const MUST_BE_SUPER_ADMIN = [
   /^siteLogoUrl$/,
   /^schoolLogo/,
   /^(icpNumber|gonganNumber|showBeianIcon)$/,
-  /^(submissionGuidelines|showBlacklistKeywords|submissionNoteRequiresApproval)$/,
+  /^(submissionGuidelines|showBlacklistKeywords)$/,
   /^astrbot(Enabled|Token|BaseUrl|PushMode|BroadcastEnabled|GroupTargets|Platforms|WeeklyConfig|GroupEvents|GroupThrottle)$/
 ]
 
 // 日常运营配置（有 ADMIN 可达的编辑入口），不得被收权
 const MUST_STAY_WITH_ADMIN = [
+  /^submissionNoteRequiresApproval$/,
   /^submissionRestrictionScope$/,
   /^same(Song|Artist)RestrictionHours$/,
   /^enable(Submission|CardCode|Replay|Collaborative|Global|RequestTime|PlayTime|SubmissionLimit|SubmissionRestriction|SubmissionRemarks)/,
