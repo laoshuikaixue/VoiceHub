@@ -125,6 +125,8 @@
 
 ## 部署指南
 
+Docker 网页应用升级、签名包和备份见 [网页应用升级](WEB-UPDATE.md)。
+
 ### 一键部署
 
 本项目可以一键部署到Vercel/Netlify/EdgeOne平台：

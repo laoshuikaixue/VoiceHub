@@ -140,6 +140,7 @@ import {
   ShieldCheck,
   Activity,
   ScrollText,
+  ArrowUpCircle,
   FileText
 } from '@lucide/vue'
 import { useLocale } from '~/utils/locale'
@@ -214,6 +215,7 @@ const menuGroups = computed(() => [
       { icon: Ticket, label: locale.value.menu?.cardCodes || '卡密管理', id: 'card-codes' },
       { icon: ListMusic, label: locale.value.menu?.musicSource || '音源控制', id: 'music-source' },
       { icon: Globe, label: locale.value.menu?.siteConfig || '站点配置', id: 'site-config' },
+      { icon: ArrowUpCircle, label: locale.value.menu?.systemUpdate || '系统升级', id: 'system-update' },
       { icon: Database, label: locale.value.menu?.database || '数据库', id: 'database' },
       { icon: Activity, label: locale.value.menu?.systemBoard || '系统看板', id: 'system-board' },
       { icon: ScrollText, label: locale.value.menu?.auditLog || '日志审计', id: 'audit-log' },

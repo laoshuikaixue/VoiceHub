@@ -86,7 +86,16 @@ ENV NODE_ENV=production \
 EXPOSE $PORT
 
 # 以非 root 用户运行（node 官方镜像自带 node 用户，无需手动创建）
-RUN chown node:node /app
+RUN set -eux; \
+    if command -v apk >/dev/null; then \
+      apk add --no-cache postgresql17-client; \
+    else \
+      apt-get update; \
+      apt-get install -y --no-install-recommends postgresql-client; \
+      rm -rf /var/lib/apt/lists/*; \
+    fi; \
+    chown node:node /app; \
+    install -d -m 0700 -o node -g node /var/lib/voicehub-updates
 USER node
 
 # 完成数据库迁移后启动应用，插件配置由服务端读取。

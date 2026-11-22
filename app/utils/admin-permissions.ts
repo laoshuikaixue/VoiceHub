@@ -19,10 +19,11 @@ export const PRIV_GRANT = 'priv:grant'
 export const PRIV_AUDIT = 'priv:audit'
 export const PRIV_LOGS = 'priv:logs'
 export const PRIV_ORGANIZATION_LABEL = 'priv:organization-label'
+export const PRIV_SYSTEM_UPDATE = 'priv:system-update'
 
 // 私有码只在持有全站通配 `*`（即超级管理员模板）时生效；
 // `priv:*` 等域通配不得覆盖，避免把审计能力随通配授权扩散出去。
-export const PRIVATE_PERMISSION_CODES: readonly string[] = [PRIV_AUDIT, PRIV_LOGS, PRIV_ORGANIZATION_LABEL]
+export const PRIVATE_PERMISSION_CODES: readonly string[] = [PRIV_AUDIT, PRIV_LOGS, PRIV_ORGANIZATION_LABEL, PRIV_SYSTEM_UPDATE]
 const PRIVATE_PERMISSION_CODE_SET: ReadonlySet<string> = new Set(PRIVATE_PERMISSION_CODES)
 
 // 安全阀保护的站点级能力：移出其最后一个持有者会把站点锁死在无人可再授权的状态
@@ -289,6 +290,7 @@ export const ADMIN_PAGE_IDS: readonly string[] = [
   'card-codes',
   'music-source',
   'site-config',
+  'system-update',
   'database',
   'system-board',
   'permissions',
@@ -346,6 +348,7 @@ export const ADMIN_PAGE_CAPABILITIES: Record<string, readonly string[]> = {
   'card-codes': ['card-codes:read'],
   'music-source': ['music-source:read', 'music-source-plugins:read', 'system-settings:read'],
   'site-config': ['system-settings:read'],
+  'system-update': [PRIV_SYSTEM_UPDATE],
   database: ['database:read', 'backup:read', 'backup:restore'],
   'system-board': ['system-board:read'],
   permissions: [PRIV_ROLE_TEMPLATE],

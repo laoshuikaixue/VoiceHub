@@ -19,6 +19,7 @@ export const PASSWORD_CHANGE_ALLOWED_ROUTES: readonly RoutePolicy[] = [
 ]
 
 export const PUBLIC_API_EXACT_ROUTES: readonly RoutePolicy[] = [
+  { path: '/api/system/update-health', methods: GET_METHODS },
   { path: '/api/legal-consent', methods: ['GET', 'POST'] },
   { path: '/api/legal-documents', methods: GET_METHODS },
   { path: '/api/music-source-plugins/media', methods: GET_METHODS },

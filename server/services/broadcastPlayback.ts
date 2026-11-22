@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
+import { updatePending } from '~~/scripts/web-update/state.mjs'
 import { and, asc, eq, gt, gte, isNull, lt, sql } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { authSessions, broadcastPlayback, broadcastStarts, playTimes, schedules, songs, users } from '~/drizzle/schema'
@@ -138,6 +139,9 @@ export async function saveBroadcastPolicy(
 export async function commandBroadcast(actor: Actor, command: BroadcastCommand, canMark: boolean) {
   return db.transaction(async tx => {
     await lockBroadcast(tx)
+    if ((command.action === 'arm' || command.action === 'start') && await updatePending(process.env.VOICEHUB_UPDATE_DIR)) {
+      throw createApiError(409, codes.BROADCAST_BUSY, '系统正在升级，请稍后重试')
+    }
     const now = getServerDate()
     const today = getBeijingDateString(now)
     const timestamp = now.getTime()

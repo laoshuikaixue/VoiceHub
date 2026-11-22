@@ -176,6 +176,13 @@
               <LazyAdminSiteConfigManager />
             </div>
 
+            <div
+              v-if="activeTab === 'system-update' && permissions.canAccessPage('system-update')"
+              class="animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <LazyAdminSystemUpdate />
+            </div>
+
             <!-- 音源控制 -->
             <div
               v-if="activeTab === 'music-source' && permissions.canAccessPage('music-source')"
