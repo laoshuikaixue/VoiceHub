@@ -1805,6 +1805,9 @@ const saveConfig = async () => {
     for (const field of ORGANIZATION_LABEL_FIELDS) {
       if (!canManageOrganizationLabels.value || configToSave[field] === originalData.value?.[field]) delete requestPayload[field]
     }
+    if (configToSave.submissionNoteRequiresApproval === originalData.value?.submissionNoteRequiresApproval) {
+      delete requestPayload.submissionNoteRequiresApproval
+    }
     delete requestPayload.schoolLogoHomeDarkUrl
     delete requestPayload.schoolLogoHomeLightUrl
     // 关闭开关时不提交该键：库里遗留的超限值不应让整表单被接口拒绝
@@ -1843,6 +1846,7 @@ const saveConfig = async () => {
       siteTitle: configToSave.siteTitle,
       organizationLabelZh: savedSettings?.organizationLabelZh ?? formData.value.organizationLabelZh,
       organizationLabelEn: savedSettings?.organizationLabelEn ?? formData.value.organizationLabelEn,
+      submissionNoteRequiresApproval: savedSettings?.submissionNoteRequiresApproval ?? formData.value.submissionNoteRequiresApproval,
       siteLogoUrl: configToSave.siteLogoUrl,
       ...(formData.value.customCssEnabled ? { customCss: customCssDraft } : {}),
       legalConsentUpdatedDate:
