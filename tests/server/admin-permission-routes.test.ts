@@ -180,8 +180,8 @@ test('普通用户模板不含后台闸门码，无法访问任何后台接口',
 
 // 内置角色保留既有入口，并显示其业务权限对应的模块。
 const DEFAULT_UI_PAGES: Record<string, readonly string[]> = {
-  SONG_ADMIN: ['overview', 'schedule', 'print', 'songs', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes'],
-  ADMIN: ['overview', 'schedule', 'print', 'songs', 'users', 'grade-class', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes', 'music-source', 'notifications', 'smtp-config', 'blacklist', 'site-config', 'database'],
+  SONG_ADMIN: ['overview', 'schedule', 'print', 'songs', 'topics', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes'],
+  ADMIN: ['overview', 'schedule', 'print', 'songs', 'topics', 'users', 'grade-class', 'playtimes', 'request-times', 'semesters', 'data-analysis', 'card-codes', 'music-source', 'notifications', 'smtp-config', 'blacklist', 'site-config', 'database'],
   SUPER_ADMIN: ADMIN_PAGE_IDS
 }
 

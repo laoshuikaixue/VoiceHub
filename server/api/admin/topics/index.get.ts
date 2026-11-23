@@ -1,7 +1,6 @@
 import { desc } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { submissionTopics } from '~/drizzle/schema'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { getSystemSettingsCached } from '~~/server/utils/system-settings-helper'
 import { formatDateTime } from '~/utils/timeUtils'
@@ -14,7 +13,6 @@ import {
 } from '~~/server/utils/submission-topic'
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
 
   const settings = await getSystemSettingsCached()
   const rows = await db.select().from(submissionTopics).orderBy(desc(submissionTopics.createdAt))

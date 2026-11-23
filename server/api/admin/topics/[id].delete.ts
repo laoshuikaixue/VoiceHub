@@ -1,12 +1,11 @@
 import { eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { songs, submissionTopics } from '~/drizzle/schema'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
 
   const topicId = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(topicId) || topicId <= 0) {
@@ -35,6 +34,12 @@ export default defineEventHandler(async (event) => {
 
       await tx.delete(submissionTopics).where(eq(submissionTopics.id, topicId))
       return detached.length
+    })
+
+    await recordAdminAudit(event, 'topic.delete', {
+      targetType: 'submission-topic',
+      targetId: topicId,
+      summary: { detachedSongs }
     })
 
     return { success: true, detachedSongs }

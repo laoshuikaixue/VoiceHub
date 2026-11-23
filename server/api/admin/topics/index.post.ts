@@ -1,7 +1,7 @@
 import { db } from '~/drizzle/db'
 import { submissionTopicDays, submissionTopicPlayTimes, submissionTopics } from '~/drizzle/schema'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
   assertPlayTimesExist,
@@ -30,7 +30,6 @@ const isUniqueViolation = (error: any) =>
   error?.code === '23505' || error?.cause?.code === '23505'
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
   const body = await readBody(event)
 
   const name = typeof body?.name === 'string' ? body.name.trim() : ''
@@ -121,6 +120,12 @@ export default defineEventHandler(async (event) => {
       }
 
       return created
+    })
+
+    await recordAdminAudit(event, 'topic.create', {
+      targetType: 'submission-topic',
+      targetId: topic.id,
+      summary: { name: topic.name, startTime: topic.startTime, endTime: topic.endTime }
     })
 
     return {

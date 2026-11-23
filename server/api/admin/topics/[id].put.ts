@@ -1,8 +1,8 @@
 import { and, eq, ne } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
 import { submissionTopicDays, submissionTopicPlayTimes, submissionTopics } from '~/drizzle/schema'
-import { requireSongAdmin } from '~~/server/utils/requireSongAdmin'
 import { createApiError } from '~~/server/utils/apiError'
+import { recordAdminAudit } from '~~/server/utils/admin-audit'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import {
   assertPlayTimesExist,
@@ -32,7 +32,6 @@ const isUniqueViolation = (error: any) =>
   error?.code === '23505' || error?.cause?.code === '23505'
 
 export default defineEventHandler(async (event) => {
-  requireSongAdmin(event)
 
   const topicId = Number(getRouterParam(event, 'id'))
   if (!Number.isInteger(topicId) || topicId <= 0) {
@@ -182,6 +181,12 @@ export default defineEventHandler(async (event) => {
       }
 
       return topic
+    })
+
+    await recordAdminAudit(event, 'topic.update', {
+      targetType: 'submission-topic',
+      targetId: topicId,
+      summary: { name: result.name, startTime: result.startTime, endTime: result.endTime }
     })
 
     return { success: true, topic: result }
