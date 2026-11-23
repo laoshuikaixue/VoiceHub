@@ -4,6 +4,7 @@ import { createRequire } from 'node:module'
 import test from 'node:test'
 import * as Vue from 'vue'
 import * as zh from '../../app/utils/locale/zh-CN.ts'
+import * as en from '../../app/utils/locale/en-US.ts'
 import * as bot from '../../server/utils/astrbot-platforms.ts'
 import * as group from '../../server/utils/astrbot-group.ts'
 import * as weekly from '../../server/utils/astrbot-weekly-config.ts'
@@ -21,6 +22,15 @@ const settings = { smtpEnabled: true, smtpHost: 'mail.example', smtpPort: 587, s
 const messages = Object.fromEntries(Object.entries(zh).map(([key, value]) => [key, Vue.ref(value)]))
 const fixture = (path: string) => {
   const scope = path.split('/').at(-1)
+  if (path === '/api/admin/permissions/matrix') {
+    const codes = ['playback:control', 'page:playback']
+    return { matrix: {
+      roles: ['ADMIN'],
+      groups: [{ domain: 'playback', codes: [codes[0]] }, { domain: 'page', codes: [codes[1]] }],
+      templates: { ADMIN: codes }, defaults: { ADMIN: codes },
+      codeHolders: {}, holdersByRole: {}, protectedCodes: [], customizedRoles: []
+    } }
+  }
   if (path.startsWith('/api/admin/system-settings/') && isAdminSettingsScope(scope)) return pickScopeSettings(scope, settings)
   if (path.endsWith('email-templates')) return { templates: [{ key: 'test', name: '测试模板', subject: '广播', html: '<p>test</p>', isBuiltin: true }] }
   if (path.endsWith('play-times') || path.endsWith('request-times')) return []
@@ -69,7 +79,7 @@ async function component(name: string, codes: string[]) {
     useAdmin: () => ({ sendAdminNotification: () => fetchData('/api/admin/notifications/send', { method: 'POST' }) }),
     usePlatformConfig: () => ({ refreshPlatformConfig: async () => {} }),
     BUILTIN_PLATFORMS: ['netease', 'tencent', 'bilibili', 'migu'], getPlatformDisplayName: (key: string) => key,
-    packageJson: { version: 'test' }, getSyncedDate: () => new Date('2026-11-02T00:00:00Z'),
+    packageJson: { version: '1.6.0.7' }, getSyncedDate: () => new Date('2026-11-02T00:00:00Z'),
     setInterval: () => 1, clearInterval: noop, setTimeout: () => 1, clearTimeout: noop,
     defineProps: () => ({ refreshKey: 0 }), defineEmits: () => noop,
     $fetch: fetchData,
@@ -152,10 +162,29 @@ test('概览按数据权限加载面板，数据库只读账号不能打开维�
   const overview = await component('OverviewDashboard', ['activities:read'])
   assert.deepEqual(overview.requests, ['GET /api/admin/activities'])
   assert.deepEqual(overview.denied, [])
+  assert.match(overview.html, /v1\.6\.0\.7</)
+  assert.ok(!overview.values.quickActions.value.some(action => action.id === 'playback'))
+  const broadcaster = await component('OverviewDashboard', ['playback:read'])
+  assert.equal(broadcaster.values.quickActions.value[0].id, 'playback')
+  assert.ok(!broadcaster.values.quickActions.value.find(action => action.id === 'schedule')?.primary)
   const database = await component('DatabaseManager', ['database:read'])
   assert.deepEqual(database.requests, [])
   for (const card of ['backup', 'restore', 'reset-db', 'reset-seq', 'auto-backup']) database.values.openModal(card)
   assert.equal(database.values.activeModal.value, 'none')
+})
+
+test('权限矩阵在权限码和持有者之间展示简短双语权限说明', async () => {
+  for (const { admin } of [zh, en]) {
+    const descriptions = admin.permissionMatrix.permissionDescriptions
+    assert.deepEqual(Object.keys(descriptions).sort(), [...permissions.ADMIN_PERMISSION_CODES].sort())
+    assert.ok(Object.values(descriptions).every(text => text.length > 0 && text.length <= 38))
+  }
+  const view = await component('PermissionMatrix', ['priv:role-template', 'playback:control', 'page:playback'])
+  assert.deepEqual(view.denied, [])
+  assert.match(view.html, /权限码<\/th>[\s\S]*说明<\/th>[\s\S]*持有者<\/th>/)
+  assert.match(view.html, /playback:control<\/span>[\s\S]*开播、切歌及无人值守/)
+  assert.match(view.html, /page:playback<\/span>[\s\S]*仅显示播放控制入口/)
+  assert.match(view.html, /colspan="4"/)
 })
 
 test('通知只读账号仅查看历史，通知操作员的用户选择不依赖完整用户管理权限', async () => {

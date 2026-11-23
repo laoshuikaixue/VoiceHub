@@ -196,7 +196,7 @@ const menuGroups = computed(() => [
     section: locale.value.sections?.users || '用户管理',
     items: [
       { icon: Users, label: locale.value.menu?.users || '用户管理', id: 'users' },
-      { icon: GraduationCap, label: locale.value.menu?.gradeClass || '年级班级', id: 'grade-class' }
+      { icon: GraduationCap, label: locale.value.menu?.gradeClass || '分类字段', id: 'grade-class' }
     ]
   },
   {

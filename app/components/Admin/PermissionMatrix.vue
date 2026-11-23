@@ -64,6 +64,9 @@
               <th class="px-4 py-3 text-[10px] font-black text-text-disabled uppercase tracking-wider">
                 {{ locale.code }}
               </th>
+              <th scope="col" class="w-44 px-2 py-3 text-[10px] font-black text-text-disabled uppercase tracking-wider">
+                {{ locale.description }}
+              </th>
               <th class="px-2 py-3 text-[10px] font-black text-text-disabled uppercase tracking-wider text-right">
                 {{ locale.holders }}
               </th>
@@ -84,7 +87,7 @@
           <tbody v-for="group in matrix.groups" :key="group.domain">
             <tr class="bg-bg-tertiary-30">
               <td
-                :colspan="2 + roles.length"
+                :colspan="3 + roles.length"
                 class="px-4 py-2 text-[10px] font-black text-text-secondary uppercase tracking-[0.14em]"
               >
                 {{ domainLabel(group.domain) }}
@@ -110,6 +113,11 @@
                     :title="locale.changed"
                   />
                 </div>
+              </td>
+              <td class="px-2 py-2 text-[11px] text-text-secondary">
+                <span class="block max-w-40 truncate" :title="permissionDescription(code)">
+                  {{ permissionDescription(code) }}
+                </span>
               </td>
               <td class="px-2 py-2 text-right text-[11px] font-bold text-text-tertiary">
                 {{ matrix.codeHolders[code] || 0 }}
@@ -264,6 +272,9 @@ const roleLabel = (role) => roleLabels.value[role] || role
 
 const domainLabel = (domain) =>
   locale.value?.domains?.[domain] || getLocaleMessage('domainFallback', domain)
+
+const permissionDescription = (code) =>
+  locale.value.permissionDescriptions?.[code] || locale.value.descriptionUnavailable
 
 const isProtected = (code) => matrix.value.protectedCodes.includes(code)
 

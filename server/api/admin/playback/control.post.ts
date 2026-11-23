@@ -11,7 +11,7 @@ const bodySchema = z.discriminatedUnion('action', [
   z.strictObject({ device: z.uuid(), action: z.literal('heartbeat'), endIfIdle: z.boolean().optional() }),
   z.strictObject({ device: z.uuid(), action: z.literal('start'), slotId: z.number().int().positive() }),
   z.strictObject({ device: z.uuid(), action: z.literal('stop'), run: z.uuid() }),
-  z.strictObject({ device: z.uuid(), action: z.literal('advance'), run: z.uuid(), entryId: z.number().int().positive(), result: z.enum(['completed', 'skipped']) })
+  z.strictObject({ device: z.uuid(), action: z.literal('advance'), run: z.uuid(), entryId: z.number().int().positive(), result: z.enum(['completed', 'skipped', 'failed']) })
 ])
 
 export default defineEventHandler(async event => {

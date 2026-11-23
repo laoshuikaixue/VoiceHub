@@ -61,6 +61,8 @@ export const ADMIN_PERMISSION_CODES: readonly string[] = [
   'playback:control',
   'playback:configure',
   'playback:mark-played',
+  'playback:remote-disarm',
+  'playback:emergency-stop',
   'stats:read',
   'play-times:read',
   'play-times:write',
@@ -307,7 +309,7 @@ export const PAGE_PERMISSIONS: Record<string, readonly string[]> = Object.fromEn
 export const PERMISSION_READ_DEPENDENCIES: Record<string, readonly string[]> = {
   'songs:read': ['songs:write', 'songs:review', 'songs:delete', 'schedule:read', 'schedule:write'],
   'schedule:read': ['schedule:write'],
-  'playback:read': ['playback:control', 'playback:configure', 'playback:mark-played'],
+  'playback:read': ['playback:control', 'playback:configure', 'playback:mark-played', 'playback:remote-disarm', 'playback:emergency-stop'],
   'play-times:read': ['play-times:write'],
   'request-times:read': ['request-times:write'],
   'semesters:read': ['semesters:write', 'semesters:delete'],

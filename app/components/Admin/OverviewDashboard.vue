@@ -210,6 +210,7 @@ import {
   Inbox,
   Loader2,
   Music,
+  Radio,
   RefreshCw,
   ShieldCheck,
   TrendingDown,
@@ -312,7 +313,8 @@ const statusItems = computed(() => [
 
 // 快速操作
 const quickActions = computed(() => [
-  { label: locale.value.actions?.schedule || '排班管理', icon: Calendar, id: 'schedule', primary: true },
+  ...(canAccessPage('playback') ? [{ label: locale.value.actions?.playback || '播放控制', icon: Radio, id: 'playback', primary: true }] : []),
+  { label: locale.value.actions?.schedule || '排期管理', icon: Calendar, id: 'schedule' },
   { label: locale.value.actions?.users || '用户管理', icon: Users, id: 'users' },
   { label: locale.value.actions?.notifications || '通知管理', icon: Bell, id: 'notifications' },
   { label: locale.value.actions?.blacklist || '黑名单', icon: Ban, id: 'blacklist' }

@@ -1,6 +1,6 @@
 <template>
   <div class="broadcast space-y-4">
-    <audio ref="audio" preload="none" @playing="buffering = false; media.sync()" @waiting="buffering = true" @pause="buffering = false; media.sync()" @timeupdate="media.sync"
+    <audio ref="audio" preload="none" @playing="setBuffering(false); media.sync()" @waiting="setBuffering(true)" @pause="setBuffering(false); media.sync()" @timeupdate="media.sync"
       @durationchange="media.sync" @ended="advance('completed')" @error="mediaError" />
 
     <section class="broadcast-panel clock-row">
@@ -15,6 +15,23 @@
           @click="command({ action: armed ? 'disarm' : 'arm' })">{{ t(armed ? 'disarm' : 'arm') }}</button>
         <p class="duty-hint text-xs text-text-tertiary">{{ t(armed ? 'ready' : 'keepOpen') }}</p>
       </div>
+    </section>
+
+    <section v-if="canRemoteDisarm || canEmergencyStop" class="broadcast-panel safety-controls">
+      <div v-if="canRemoteDisarm" class="flex flex-wrap items-center gap-3">
+        <span class="text-xs text-text-secondary">{{ remoteUnattended ? t('remoteOnline', remoteUnattended.account) : t('remoteOffline') }}</span>
+        <button type="button" class="broadcast-button" :disabled="!remoteUnattended || remoteDisarming"
+          @click="disarmTarget = remoteUnattended">{{ t('remoteDisarm') }}</button>
+      </div>
+      <button v-if="canEmergencyStop" type="button" class="emergency-stop" :disabled="emergencyPending"
+        @pointerdown="startEmergencyHold" @pointerup="cancelEmergencyHold" @pointerleave="cancelEmergencyHold"
+        @pointercancel="cancelEmergencyHold" @blur="cancelEmergencyHold" @contextmenu.prevent
+        @keydown.space.enter.prevent="startEmergencyHold" @keyup.space.enter.prevent="cancelEmergencyHold"
+        @click.prevent>
+        <span class="emergency-progress" :style="{ width: emergencyProgress + '%' }" aria-hidden="true" />
+        <span class="relative">{{ t(emergencyPending ? 'emergencySending' : 'emergencyStop') }}</span>
+        <small class="relative">{{ t('emergencyHold') }}</small>
+      </button>
     </section>
 
     <section class="broadcast-panel">
@@ -63,13 +80,13 @@
           <progress :value="elapsed" :max="mediaDuration || 1" :aria-label="t('remaining')" />
           <div class="flex justify-between text-xs text-text-tertiary tabular-nums"><span>{{ formatDuration(elapsed) }}</span><span>{{ durationLabel(mediaDuration) }}</span></div>
         </div>
-        <div v-if="canControl" class="transport-buttons">
-          <button type="button" class="broadcast-button primary play-button" :disabled="busy || mediaLoading || (active ? closing : !canStart)" @click="togglePlayback">
+        <div class="transport-buttons">
+          <button type="button" class="broadcast-button primary play-button" :aria-disabled="!!playBlockedReason" @click="togglePlayback">
             <Pause v-if="playing" :size="15" /><Play v-else :size="15" />{{ t(playing ? 'pause' : active ? 'resume' : 'start') }}
           </button>
-          <button type="button" class="broadcast-button" :disabled="busy || !active || closing || active.cursor >= active.entries.length - 1" @click="advance('skipped')"><SkipForward :size="15" />{{ t('next') }}</button>
-          <button type="button" class="broadcast-button text-error" :disabled="!active" @click="stop"><Square :size="14" />{{ t('stop') }}</button>
-          <div v-if="qualityOptions.length > 1" class="quality-select">
+          <button v-if="canControl" type="button" class="broadcast-button" :disabled="busy || !active || closing || active.cursor >= active.entries.length - 1" @click="advance('skipped')"><SkipForward :size="15" />{{ t('next') }}</button>
+          <button v-if="canControl" type="button" class="broadcast-button text-error" :disabled="!active" @click="stop"><Square :size="14" />{{ t('stop') }}</button>
+          <div v-if="canControl && qualityOptions.length > 1" class="quality-select">
             <CustomSelect :label="t('requestedQuality')" :options="qualityOptions" :model-value="qualityValue"
               :disabled="busy || mediaLoading || !qualitySong" @update:model-value="changeQuality" />
             <p v-if="actualQuality" class="text-xs text-text-tertiary">{{ t('actualQuality', actualQuality) }}</p>
@@ -116,6 +133,11 @@
         <div v-if="canConfigure" class="flex justify-end mt-3"><button type="submit" class="broadcast-button primary" :disabled="saving || !dirty || !!loadError">{{ t('save') }}</button></div>
       </form>
     </div>
+    <ConfirmDialog v-model:show="showPlayReason" :title="t('playUnavailable')" :message="playReason"
+      type="info" :show-cancel="false" @confirm="showPlayReason = false" />
+    <ConfirmDialog :show="!!disarmTarget" :title="t('remoteDisarm')" :loading="remoteDisarming"
+      :message="disarmTarget ? t('remoteDisarmConfirm', disarmTarget.account) : ''" type="warning"
+      @close="disarmTarget = null" @confirm="remoteDisarm" />
   </div>
 </template>
 
@@ -125,6 +147,7 @@ import { ChevronLeft, ChevronRight, CircleDot, Pause, Play, SkipForward, Square 
 import AppDatePicker from '~/components/UI/Common/AppDatePicker.vue'
 import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import CustomSelect from '~/components/UI/Common/CustomSelect.vue'
+import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useAudioPlayer } from '~/composables/useAudioPlayer'
 import { useBroadcastMedia } from '~/composables/useBroadcastMedia'
 import { usePermissions } from '~/composables/usePermissions'
@@ -144,6 +167,8 @@ const { can } = usePermissions()
 const canControl = computed(() => can('playback:control'))
 const canConfigure = computed(() => can('playback:configure'))
 const canMark = computed(() => can('playback:mark-played'))
+const canRemoteDisarm = computed(() => can('playback:remote-disarm'))
+const canEmergencyStop = computed(() => can('playback:emergency-stop'))
 const media = useBroadcastMedia()
 const { element: audio, currentTime: elapsed, duration: mediaDuration, playing, loading: mediaLoading, actualQuality } = media
 const publicPlayer = useAudioPlayer()
@@ -156,6 +181,11 @@ const dateStrip = ref(null)
 const dates = computed(() => calendarAnchor.value ? Array.from({ length: 61 }, (_, i) => addDaysToString(calendarAnchor.value, i - 30)) : [])
 const slotId = ref(null)
 const response = shallowRef(null)
+const remoteUnattended = computed(() => response.value?.remoteUnattended || null)
+const disarmTarget = ref(null)
+const remoteDisarming = ref(false)
+const emergencyPending = ref(false)
+const emergencyProgress = ref(0)
 const slots = computed(() => response.value?.slots || [])
 const selected = computed(() => slots.value.find(slot => slot.id === slotId.value))
 const entries = computed(() => response.value?.slotId === slotId.value ? response.value.entries : [])
@@ -164,6 +194,8 @@ const pending = ref(false)
 const busy = ref(false)
 const saving = ref(false)
 const buffering = ref(false)
+const BUFFERING_TIMEOUT_MS = 15_000
+let bufferingSince = null
 const armed = ref(false)
 const active = shallowRef(null)
 const finished = ref(new Set())
@@ -177,14 +209,36 @@ const qualityOptions = computed(() => media.getQualityOptions(qualityPlatform.va
 const qualityValue = computed(() => media.getQuality(qualityPlatform.value))
 const status = computed(() => t(mediaLoading.value || buffering.value ? 'loadingTrack' : closing.value ? 'closing' : playing.value ? 'playing' : 'paused'))
 const endOptions = computed(() => [{ value: 'finish', label: t('finishAtEnd') }, { value: 'stop', label: t('stopAtEnd') }])
-const canStart = computed(() => !pending.value && !loadError.value && date.value === today.value &&
-  entries.value.length > 0 && clock.value < selected.value?.end)
+const showPlayReason = ref(false)
+const playReason = ref('')
+const playBlockedReason = computed(() => {
+  if (!canControl.value) return t('playNeedsPermission')
+  if (busy.value || mediaLoading.value) return t('playBusy')
+  if (active.value) return closing.value ? t('playEnded') : ''
+  if (!clock.value) return t('playClockUnavailable')
+  if (pending.value || !date.value) return t('playLoadingSchedule')
+  if (loadError.value) return loadError.value
+  if (date.value > today.value) return t('playFutureDate')
+  if (date.value < today.value) return t('playPastDate')
+  if (!selected.value) return t('noSlots')
+  if (clock.value >= selected.value.end) return t('playEnded')
+  if (!entries.value.length) return t('noTracks')
+  return ''
+})
+
+function explainPlayback(message) {
+  playReason.value = message
+  showPlayReason.value = true
+}
 
 let device, tickTimer, pollTimer, pageTimer, requestId = 0, leaseDeadline = 0, disposed = false
 let chain = Promise.resolve()
 let heartbeatPending = false
 let ending = false
 let stoppingRun = null
+let emergencyStoppedRun = null
+let emergencyFrame = 0
+const EMERGENCY_HOLD_MS = 1500
 let cutoffRun = null
 let controlEpoch = 0
 
@@ -289,7 +343,7 @@ function selectSlot(id) {
 function clearActive() {
   if (active.value) finished.value.add(`${active.value.date}/${active.value.slotId}`)
   media.reset()
-  buffering.value = false
+  setBuffering(false)
   active.value = null
 }
 
@@ -302,26 +356,29 @@ function loseControl() {
 }
 
 async function loadTrack(entry) {
+  const run = active.value?.id
+  setBuffering(false)
   media.reset()
   const result = await media.load(entry.song)
-  if (current.value?.id !== entry.id) return
-  if (result === 'blocked') showToast(t('autoplayBlocked'), 'warning')
-  if (result === 'failed') {
-    showToast(t('sourceFailed', entry.song.title), 'error')
-    stop()
+  if (active.value?.id !== run || current.value?.id !== entry.id) return
+  if (result === 'blocked') {
+    setBuffering(false)
+    showToast(t('autoplayBlocked'), 'warning')
   }
+  if (result === 'failed') await advance('failed')
 }
 
 function applyControl(data, action, began) {
   applyClock(data.timestamp, began)
   leaseDeadline = data.expiresAt ? performance.now() + Math.max(0, data.expiresAt - data.timestamp - (Date.now() - began)) : 0
   armed.value = data.armed
+  if (action === 'arm' && data.armed) showToast(t('leavePageWarning'), 'warning')
   if (!data.active) {
     if (active.value && action === 'heartbeat') showToast(t('leaseEnded'), 'info')
     if (active.value) clearActive()
     return
   }
-  if (data.active.id === stoppingRun) return
+  if (data.active.id === stoppingRun || data.active.id === emergencyStoppedRun) return
   const previous = active.value
   const changed = previous?.id !== data.active.id || previous.cursor !== data.active.cursor
   active.value = data.active
@@ -334,7 +391,7 @@ function applyControl(data, action, began) {
       loadPage()
     }
   }
-  if (changed) void loadTrack(current.value)
+  if (changed && action !== 'advance') void loadTrack(current.value)
 }
 
 function command(input, quiet = false) {
@@ -353,7 +410,8 @@ function command(input, quiet = false) {
     } catch (err) {
       if (!disposed) {
         if (quiet || active.value || armed.value) loseControl()
-        if (!quiet) showToast(localize(err), 'error')
+        if (input.action === 'start') explainPlayback(localize(err))
+        else if (!quiet) showToast(localize(err), 'error')
       }
       return null
     }
@@ -366,6 +424,66 @@ async function heartbeat() {
   if (heartbeatPending || (!armed.value && !active.value) || !canControl.value) return
   heartbeatPending = true
   try { await command({ action: 'heartbeat' }, true) } finally { heartbeatPending = false }
+}
+
+async function remoteDisarm() {
+  const target = disarmTarget.value
+  if (!target || !canRemoteDisarm.value || remoteDisarming.value) return
+  remoteDisarming.value = true
+  try {
+    await $fetch('/api/admin/playback/remote', { method: 'POST', body: { action: 'disarm', target: target.target }, timeout: 5000 })
+    showToast(t('remoteDisarmed'), 'success')
+  } catch (error) {
+    showToast(localize(error), 'error')
+  } finally {
+    remoteDisarming.value = false
+    disarmTarget.value = null
+    void loadPage(true)
+  }
+}
+
+function cancelEmergencyHold() {
+  cancelAnimationFrame(emergencyFrame)
+  emergencyFrame = 0
+  emergencyProgress.value = 0
+}
+
+function startEmergencyHold(event) {
+  if (!canEmergencyStop.value || emergencyPending.value || emergencyFrame || event.repeat ||
+      (event.type === 'pointerdown' && (!event.isPrimary || event.button !== 0))) return
+  const startedAt = performance.now()
+  const update = () => {
+    const elapsedMs = performance.now() - startedAt
+    emergencyProgress.value = Math.min(100, 100 * elapsedMs / EMERGENCY_HOLD_MS)
+    if (elapsedMs < EMERGENCY_HOLD_MS) emergencyFrame = requestAnimationFrame(update)
+    else {
+      cancelEmergencyHold()
+      void emergencyStop()
+    }
+  }
+  emergencyFrame = requestAnimationFrame(update)
+}
+
+async function emergencyStop() {
+  if (!canEmergencyStop.value || emergencyPending.value) return
+  emergencyPending.value = true
+  try {
+    const { runId } = await $fetch('/api/admin/playback/remote', { method: 'POST', body: { action: 'emergency-stop' }, timeout: 5000 })
+    if (runId) {
+      emergencyStoppedRun = runId
+      if (active.value?.id === runId) clearActive()
+    }
+    showToast(t(runId ? 'emergencyIssued' : 'emergencyNothingPlaying'), 'warning')
+  } catch (error) {
+    showToast(localize(error), 'error')
+  } finally {
+    emergencyPending.value = false
+    void loadPage(true)
+  }
+}
+
+function cancelEmergencyIfHidden() {
+  if (document.hidden) cancelEmergencyHold()
 }
 
 async function save() {
@@ -383,12 +501,18 @@ async function save() {
 }
 
 async function togglePlayback() {
-  if (!canControl.value || busy.value || mediaLoading.value) return
+  if (playBlockedReason.value) return explainPlayback(playBlockedReason.value)
   if (!active.value) {
-    if (canStart.value) await command({ action: 'start', slotId: slotId.value })
+    await command({ action: 'start', slotId: slotId.value })
   } else if (!closing.value && !audio.value.paused) audio.value.pause()
   else if (!closing.value) {
-    try { await audio.value.play() } catch { showToast(t('autoplayBlocked'), 'warning') }
+    const run = active.value.id
+    const entryId = current.value?.id
+    try { await audio.value.play() } catch (error) {
+      if (active.value?.id !== run || current.value?.id !== entryId || error?.name === 'AbortError') return
+      if (error?.name === 'NotAllowedError') showToast(t('autoplayBlocked'), 'warning')
+      else await advance('failed')
+    }
   }
 }
 
@@ -406,31 +530,42 @@ async function advance(result) {
   if (!run || !entry || ending || !canControl.value || (result === 'skipped' && closing.value)) return
   if (result === 'completed' && !audio.value?.ended) return
   ending = true
+  setBuffering(false)
   media.reset()
   try {
     const response = await command({ action: 'advance', run, entryId: entry.id, result })
     if (!response) return
-    outcomes.value.set(entry.id, result === 'skipped' ? 'skipped' : response.marked ? 'marked' : 'completed')
+    outcomes.value.set(entry.id, result === 'completed' ? (response.marked ? 'marked' : 'completed') : 'skipped')
     if (result === 'skipped') showToast(t('skipToast', entry.song.title), 'info')
+    if (result === 'failed') showToast(t(response.active ? 'sourceSkipped' : 'sourceEnded', entry.song.title), 'warning')
     void loadPage(true)
-  } finally { ending = false }
+  } finally {
+    ending = false
+    // 下一首可能立即取链失败，须等上一首的切换请求结束后再开始加载。
+    const next = current.value
+    if (active.value?.id === run && next && next.id !== entry.id && !closing.value) void loadTrack(next)
+  }
 }
 
 async function changeQuality(value) {
   if (!canControl.value || !qualitySong.value || mediaLoading.value || !qualityOptions.value.some(option => option.value === value)) return
   if (!current.value) { media.saveQuality(qualityPlatform.value, value); return }
-  const result = await media.load(current.value.song, value)
+  const { id: run } = active.value
+  const entry = current.value
+  const result = await media.load(entry.song, value)
+  if (active.value?.id !== run || current.value?.id !== entry.id) return
   if (result === 'quality-failed') showToast(t('qualityFailed'), 'error')
-  if (result === 'failed' && current.value) {
-    showToast(t('sourceFailed', current.value.song.title), 'error')
-    stop()
-  }
+  if (result === 'failed') await advance('failed')
 }
 
 function mediaError() {
   if (!current.value || mediaLoading.value || !audio.value?.getAttribute('src')) return
-  showToast(t('sourceFailed', current.value.song.title), 'error')
-  stop()
+  void advance('failed')
+}
+
+function setBuffering(waiting) {
+  buffering.value = waiting
+  bufferingSince = waiting ? (bufferingSince ?? performance.now()) : null
 }
 
 function tick() {
@@ -439,11 +574,15 @@ function tick() {
   if (active.value && active.value.id !== cutoffRun && closing.value && !ending && (active.value.stopAtEnd || !playing.value)) {
     cutoffRun = active.value.id
     media.reset()
+    setBuffering(false)
     void heartbeat()
+  } else if (active.value && audio.value?.getAttribute('src') && bufferingSince !== null && performance.now() - bufferingSince >= BUFFERING_TIMEOUT_MS) {
+    void advance('failed')
   }
 }
 
 function release() {
+  cancelEmergencyHold()
   controlEpoch++
   if (device && (armed.value || active.value)) {
     void $fetch('/api/admin/playback/control', { method: 'POST', body: { device, action: 'release' }, keepalive: true }).catch(() => {})
@@ -453,6 +592,7 @@ function release() {
 }
 
 watch(canControl, allowed => { if (!allowed) release() })
+watch(canEmergencyStop, allowed => { if (!allowed) cancelEmergencyHold() })
 
 onMounted(async () => {
   // getRandomValues 也支持通过内网 HTTP 打开的播出设备。
@@ -465,6 +605,8 @@ onMounted(async () => {
   pollTimer = setInterval(heartbeat, 1500)
   pageTimer = setInterval(() => loadPage(true), 8000)
   window.addEventListener('pagehide', release)
+  window.addEventListener('blur', cancelEmergencyHold)
+  document.addEventListener('visibilitychange', cancelEmergencyIfHidden)
   try {
     const began = Date.now()
     const { timestamp } = await $fetch('/api/sys/time', { timeout: 5000 })
@@ -478,6 +620,8 @@ onBeforeUnmount(() => {
   disposed = true
   clearInterval(tickTimer); clearInterval(pollTimer); clearInterval(pageTimer)
   window.removeEventListener('pagehide', release)
+  window.removeEventListener('blur', cancelEmergencyHold)
+  document.removeEventListener('visibilitychange', cancelEmergencyIfHidden)
   release()
 })
 </script>
@@ -486,6 +630,11 @@ onBeforeUnmount(() => {
 .broadcast-panel { border: 1px solid var(--border-secondary); background: var(--bg-secondary); border-radius: 15px; padding: 15px 16px; }
 .broadcast h2 { font-size: 1rem; font-weight: 700; }
 .clock-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); align-items: center; gap: 16px; }
+.safety-controls { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px 20px; }
+.emergency-stop { position: relative; overflow: hidden; isolation: isolate; display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; padding: 8px 14px; min-height: 38px; border-radius: 8px; background: #b91c1c; color: white; font-weight: 750; touch-action: none; user-select: none; }
+.emergency-stop:disabled { opacity: .65; cursor: wait; }
+.emergency-stop small { font-size: .7rem; font-weight: 550; }
+.emergency-progress { position: absolute; inset: 0 auto 0 0; background: #7f1d1d; }
 .server-clock { color: var(--text-primary); font-size: clamp(2rem, 5vw, 3rem); font-weight: 750; line-height: 1.15; }
 .duty-control { display: grid; grid-template-columns: minmax(0, 1fr) 9rem; grid-template-rows: 24px 36px 24px; grid-template-areas: '. .' 'state button' 'hint .'; align-items: center; column-gap: 8px; }
 .duty-control strong { grid-area: state; }
@@ -497,7 +646,7 @@ onBeforeUnmount(() => {
 .broadcast-button:hover:enabled { background: var(--bg-quaternary); }
 .broadcast-button.primary, .date-card[aria-pressed='true'] { background: var(--primary-hover); color: white; }
 .broadcast-button.primary:hover:enabled { background: var(--primary); }
-.broadcast-button:disabled, .toggle:disabled { opacity: .5; cursor: default; }
+.broadcast-button:disabled, .broadcast-button[aria-disabled='true'], .toggle:disabled { opacity: .5; cursor: default; }
 .icon-button { width: 32px; padding: 0; flex: none; }
 .date-strip { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
 .date-card { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 0 58px; height: 60px; padding: 3px; border: 1px solid var(--border-secondary); border-radius: 8px; background: var(--bg-tertiary); font-size: .7rem; }

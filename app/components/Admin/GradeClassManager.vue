@@ -234,6 +234,7 @@ import AppSpinner from '~/components/UI/Common/AppSpinner.vue'
 import ConfirmDialog from '~/components/UI/ConfirmDialog.vue'
 import { useLocale } from '~/utils/locale'
 import { useToast } from '~/composables/useToast'
+import { useServerErrors } from '~/composables/useLocaleText'
 import { parseClassInput } from '~/utils/grade-class-input'
 
 const { can } = usePermissions()
@@ -241,6 +242,7 @@ const { can } = usePermissions()
 const { admin } = useLocale()
 const locale = computed(() => admin.value?.gradeClass || {})
 const { showToast: showNotification } = useToast()
+const { localize: getErrorMessage } = useServerErrors()
 
 const items = ref([])
 const loading = ref(false)
@@ -281,9 +283,6 @@ const targetGradeCount = computed(() => {
 
 const groupTotalUsers = (group) =>
   group.items.reduce((sum, item) => sum + (item.userCount || 0), 0)
-
-const getErrorMessage = (error) =>
-  error?.data?.message || error?.message || error?.statusMessage || ''
 
 const loadItems = async () => {
   loading.value = true

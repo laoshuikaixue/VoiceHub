@@ -45,6 +45,7 @@ export const ADMIN_ROUTE_RULES: readonly AdminRouteRule[] = [
   { p: 'playback', m: GET_METHODS, any: ['playback:read'] },
   { p: 'playback/:id', m: ['PUT'], any: ['playback:configure'] },
   { p: 'playback/control', m: ['POST'], any: ['playback:control'] },
+  { p: 'playback/remote', m: ['POST'], any: ['playback:remote-disarm', 'playback:emergency-stop'] },
   { p: 'replay-requests', m: GET_METHODS, any: ['replay-requests:read'] },
   { p: 'replay-requests/*', m: WRITE_METHODS, any: ['replay-requests:write'] },
   { p: 'play-times', m: GET_METHODS, any: ['play-times:read'] },

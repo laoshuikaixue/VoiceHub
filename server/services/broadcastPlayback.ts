@@ -16,9 +16,10 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
 type Slot = typeof playTimes.$inferSelect
 type Lease = typeof broadcastPlayback.$inferSelect
 type Actor = Pick<Lease, 'userId' | 'authSession' | 'device'>
+type BroadcastEndReason = 'playlist-completed' | 'slot-end' | 'playlist-changed' | 'source-failed'
 type BroadcastAudit =
   | { action: 'playback.unattended-enable' | 'playback.unattended-disable'; reason?: 'page-released'; slotId?: never; date?: never; runId?: never }
-  | { action: 'playback.auto-start' | 'playback.auto-end'; slotId: number | null; date: string | null; runId: string | null; reason?: 'playlist-completed' | 'slot-end' | 'playlist-changed' }
+  | { action: 'playback.auto-start' | 'playback.auto-end'; slotId: number | null; date: string | null; runId: string | null; reason?: BroadcastEndReason }
 const LEASE_MS = 12_000
 const START_GRACE_MS = 5_000
 const emptyRun = { run: null, playDate: null, slotId: null, queue: null, cursor: 0 }
@@ -28,7 +29,7 @@ export type BroadcastCommand =
   | { action: 'heartbeat'; endIfIdle?: boolean }
   | { action: 'start'; slotId: number }
   | { action: 'stop'; run: string }
-  | { action: 'advance'; run: string; entryId: number; result: 'completed' | 'skipped' }
+  | { action: 'advance'; run: string; entryId: number; result: 'completed' | 'skipped' | 'failed' }
 
 export function broadcastUnavailable() {
   return createApiError(409, codes.BROADCAST_UNAVAILABLE, '播出时段、排期或播出设备状态已变化')
@@ -66,7 +67,7 @@ function policy(slot: Slot) {
   return { autoStart: slot.broadcastAutoStart, stopAtEnd: slot.broadcastStopAtEnd, markPlayed: slot.broadcastMarkPlayed }
 }
 
-export async function readBroadcastPage(date: string, slotId: number | undefined) {
+export async function readBroadcastPage(date: string, slotId: number | undefined, includeRemote = false) {
   // 在读列表前即校验日期，包括没有启用时段的站点。
   parseScheduleDateQuery(date)
   const slots = await db.select().from(playTimes).orderBy(asc(playTimes.startTime), asc(playTimes.id))
@@ -76,11 +77,54 @@ export async function readBroadcastPage(date: string, slotId: number | undefined
   })
   const selected = available.find(slot => slot.id === slotId) ?? available[0]
   const entries = selected ? await readQueue(db, date, selected.id) : []
-  return { slots: available, slotId: selected?.id ?? null, entries, duration: summarizeScheduleDuration(entries), timestamp: getServerDate().getTime() }
+  const controller = includeRemote ? await readOnlineController(db, getServerDate()) : null
+  const remoteUnattended = controller?.lease.armedAt ? {
+    account: controller.username, target: unattendedTarget(controller.lease), playing: Boolean(controller.lease.run)
+  } : null
+  return { slots: available, slotId: selected?.id ?? null, entries, duration: summarizeScheduleDuration(entries), timestamp: getServerDate().getTime(), remoteUnattended }
 }
 
 export async function lockBroadcast(tx: Tx) {
   await tx.execute(sql`select pg_advisory_xact_lock(hashtext('voicehub.broadcast'))`)
+}
+
+async function readOnlineController(source: Tx | typeof db, now: Date) {
+  const [controller] = await source.select({ username: users.username, lease: broadcastPlayback })
+    .from(broadcastPlayback)
+    .innerJoin(users, eq(users.id, broadcastPlayback.userId))
+    .innerJoin(authSessions, and(eq(authSessions.userId, users.id), sql`${authSessions.id}::text = ${broadcastPlayback.authSession}`))
+    .where(and(eq(broadcastPlayback.id, 1), gt(broadcastPlayback.expiresAt, now), isNull(authSessions.revokedAt),
+      gt(authSessions.expiresAt, now), eq(users.status, 'active')))
+  return controller
+}
+
+function unattendedTarget(lease: Lease) {
+  return createHash('sha256').update(JSON.stringify([lease.device, lease.authSession, lease.armedAt])).digest('hex')
+}
+
+export type RemoteBroadcastCommand = { action: 'disarm'; target: string } | { action: 'emergency-stop' }
+
+export async function commandRemoteBroadcast(command: RemoteBroadcastCommand) {
+  return db.transaction(async tx => {
+    await lockBroadcast(tx)
+    const now = getServerDate()
+    if (command.action === 'disarm') {
+      const controller = await readOnlineController(tx, now)
+      if (!controller?.lease.armedAt || unattendedTarget(controller.lease) !== command.target) throw broadcastUnavailable()
+      const { lease, username } = controller
+      await tx.update(broadcastPlayback).set({ armedAt: null }).where(eq(broadcastPlayback.id, 1))
+      return { runId: lease.run, slotId: lease.slotId, date: lease.playDate, account: username }
+    }
+
+    const lease = await tx.query.broadcastPlayback.findFirst({ where: eq(broadcastPlayback.id, 1) })
+    if (lease) {
+      // 保留后续时段的值守，同时阻止当前开播窗口在紧急停播后接续启动。
+      await tx.update(broadcastPlayback).set({
+        ...emptyRun, armedAt: lease.armedAt ? new Date(now.getTime() + 1) : null
+      }).where(eq(broadcastPlayback.id, 1))
+    }
+    return { runId: lease?.run ?? null, slotId: lease?.slotId ?? null, date: lease?.playDate ?? null, account: null }
+  })
 }
 
 export async function readScheduleBroadcastContext(
@@ -93,17 +137,11 @@ export async function readScheduleBroadcastContext(
   const enabled = rows.filter(slot => slot.broadcastAutoStart && broadcastWindow(date, slot))
   if (!enabled.length) return { slots: [], account: null, confirmation: null }
 
-  const now = getServerDate()
-  const [controller] = await source.select({ username: users.username, armedAt: broadcastPlayback.armedAt })
-    .from(broadcastPlayback)
-    .innerJoin(users, eq(users.id, broadcastPlayback.userId))
-    .innerJoin(authSessions, and(eq(authSessions.userId, users.id), sql`${authSessions.id}::text = ${broadcastPlayback.authSession}`))
-    .where(and(eq(broadcastPlayback.id, 1), gt(broadcastPlayback.expiresAt, now), isNull(authSessions.revokedAt),
-      gt(authSessions.expiresAt, now), eq(users.status, 'active')))
-  const account = controller?.armedAt ? controller.username : null
+  const controller = await readOnlineController(source, getServerDate())
+  const account = controller?.lease.armedAt ? controller.username : null
   const slots = enabled.map(slot => ({ id: slot.id, name: slot.name, startTime: slot.startTime, endTime: slot.endTime }))
   const confirmation = createHash('sha256')
-    .update(JSON.stringify([date, slotId, wholeDay, slots, account, controller?.armedAt ?? null]))
+    .update(JSON.stringify([date, slotId, wholeDay, slots, account, controller?.lease.armedAt ?? null]))
     .digest('hex')
   return { slots, account, confirmation }
 }
@@ -187,7 +225,7 @@ export async function commandBroadcast(actor: Actor, command: BroadcastCommand, 
       return true
     }
 
-    function endAutomatically(reason: 'playlist-completed' | 'slot-end' | 'playlist-changed') {
+    function endAutomatically(reason: BroadcastEndReason) {
       audit.push({ action: 'playback.auto-end', slotId: lease.slotId, date: lease.playDate, runId: lease.run, reason })
       Object.assign(lease, emptyRun)
     }
@@ -199,7 +237,7 @@ export async function commandBroadcast(actor: Actor, command: BroadcastCommand, 
     }
 
     if (command.action === 'stop' || command.action === 'advance') {
-      if (!lease.run || command.run !== lease.run) throw broadcastUnavailable()
+      if (lease.run && command.run !== lease.run) throw broadcastUnavailable()
       if (command.action === 'stop') Object.assign(lease, emptyRun)
     }
 
@@ -235,6 +273,7 @@ export async function commandBroadcast(actor: Actor, command: BroadcastCommand, 
           lease.cursor++
           if (lease.cursor >= entries.length || timestamp >= window.end) {
             if (command.result === 'completed') endAutomatically(lease.cursor >= entries.length ? 'playlist-completed' : 'slot-end')
+            else if (command.result === 'failed') endAutomatically(timestamp >= window.end ? 'slot-end' : 'source-failed')
             else Object.assign(lease, emptyRun)
           }
         }

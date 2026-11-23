@@ -49,6 +49,7 @@
             <!-- 操作按钮 -->
             <div class="flex gap-3 w-full">
               <button
+                v-if="showCancel"
                 class="flex-1 px-6 py-4 bg-bg-tertiary hover:bg-bg-quaternary text-text-secondary text-xs font-black rounded-2xl transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="loading"
                 @click="handleCancel"
@@ -102,6 +103,10 @@ const props = defineProps({
   cancelText: {
     type: String,
     default: ''
+  },
+  showCancel: {
+    type: Boolean,
+    default: true
   },
   loading: {
     type: Boolean,

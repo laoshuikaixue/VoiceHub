@@ -5062,12 +5062,23 @@ const getPlayTimeConflict = (song) => {
   }
 }
 
-// 手工加入排期前校验期望时段约束，返回 true 表示允许加入
-const canAddToSchedule = (song) => {
+// 跨时段操作在确认后提交，并核对排期视图是否仍是发起确认时的视图。
+const confirmSchedulePlacement = (song, apply) => {
   const conflict = getPlayTimeConflict(song)
-  if (!conflict) return true
+  if (!conflict) return apply()
+  const playDate = selectedDate.value
+  const semester = selectedSemester.value
+  const text = locale.value.confirmations
   const target = conflict.currentPlayTimeId ? getPlayTimeName(conflict.currentPlayTimeId) : locale.value.allPlayTimes
-  return window.confirm(locale.value.confirmations.placementOverride(conflict.preferredPlayTimeName, target))
+  confirmDialogTitle.value = text.placementOverrideTitle
+  confirmDialogMessage.value = text.placementOverride(conflict.preferredPlayTimeName, target)
+  confirmDialogType.value = 'warning'
+  confirmDialogConfirmText.value = text.placementOverrideConfirm
+  confirmAction.value = () => {
+    const currentSlot = selectedPlayTime.value ? Number(selectedPlayTime.value) : null
+    if (selectedDate.value === playDate && selectedSemester.value === semester && currentSlot === conflict.currentPlayTimeId) apply()
+  }
+  showConfirmDialog.value = true
 }
 
 // 从拖拽数据中查找歌曲（优先查 songs/replayRequests，再回退到 pool）
@@ -5114,87 +5125,46 @@ const findSongFromDragData = (dragData) => {
 // 从拖拽数据中提取歌曲并添加到排期列表末尾（共享逻辑）
 const addSongToScheduleFromDrag = (event) => {
   const { song, songId } = findSongFromDragData(JSON.parse(event.dataTransfer.getData('text/plain')) || {})
-  if (!song) return
-
-  const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === songId)
-  if (existingIndex !== -1) return
-
-  if (!canAddToSchedule(song)) return
-
-  const insertIndex = localScheduledSongs.value.length
-
-  const newSchedule = {
-    id: Date.now(),
-    replayRequestId: song.replayRequestId || null,
-    song: song,
-    playDate: selectedDate.value,
-    sequence: insertIndex + 1,
-    isNew: true,
-    isLocalOnly: true
-  }
-
-  scheduledSongIds.value.add(songId)
-  setSongScheduledFlag(songId, true)
-  localScheduledSongs.value.push(newSchedule)
-  hasChanges.value = true
+  placeSongInSchedule(song, songId)
 }
 
 // 从拖拽数据中提取歌曲并插入到指定位置（共享逻辑）
 const insertSongToScheduleAt = (event, dropIndex) => {
   const dragData = JSON.parse(event.dataTransfer.getData('text/plain'))
   const { song, songId } = findSongFromDragData(dragData)
-  if (!song) return
-
-  const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === songId)
-  if (existingIndex !== -1) return
-
-  if (!canAddToSchedule(song)) return
-
-  const newSchedule = {
-    id: Date.now(),
-    replayRequestId: song.replayRequestId || null,
-    song: song,
-    playDate: selectedDate.value,
-    sequence: dropIndex + 1,
-    isNew: true
-  }
-
-  scheduledSongIds.value.add(songId)
-  setSongScheduledFlag(songId, true)
-
-  const newOrder = [...localScheduledSongs.value]
-  newOrder.splice(dropIndex, 0, newSchedule)
-  newOrder.forEach((item, index) => {
-    item.sequence = index + 1
-  })
-
-  localScheduledSongs.value = newOrder
-  hasChanges.value = true
+  placeSongInSchedule(song, songId, { dropIndex })
 }
 
 // 添加歌曲到排期（点击方式）
-const addSongToSchedule = (song) => {
-  if (!can('schedule:write')) return
-  const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === song.id)
-  if (existingIndex !== -1) return
-  if (!canAddToSchedule(song)) return
+const addSongToSchedule = (song) => placeSongInSchedule(song, song.id, { vibration: 50 })
 
-  const newSchedule = {
-    id: Date.now(),
-    replayRequestId: song.replayRequestId || null,
-    song: song,
-    playDate: selectedDate.value,
-    sequence: localScheduledSongs.value.length + 1,
-    isNew: true,
-    isLocalOnly: true
-  }
-
-  scheduledSongIds.value.add(song.id)
-  setSongScheduledFlag(song.id, true)
-  localScheduledSongs.value.push(newSchedule)
-  hasChanges.value = true
-
-  if (navigator.vibrate) navigator.vibrate(50)
+const placeSongInSchedule = (song, songId, { dropIndex, isLocalOnly = dropIndex === undefined, vibration } = {}) => {
+  const canPlace = () => can('schedule:write') && !localScheduledSongs.value.some(item => item.song.id === songId)
+  if (!song || showConfirmDialog.value || !canPlace()) return
+  confirmSchedulePlacement(song, () => {
+    if (!canPlace()) return
+    const schedule = {
+      id: Date.now(),
+      replayRequestId: song.replayRequestId || null,
+      song,
+      playDate: selectedDate.value,
+      sequence: localScheduledSongs.value.length + 1,
+      isNew: true
+    }
+    if (isLocalOnly) schedule.isLocalOnly = true
+    if (dropIndex === undefined) {
+      localScheduledSongs.value.push(schedule)
+    } else {
+      const newOrder = [...localScheduledSongs.value]
+      newOrder.splice(dropIndex, 0, schedule)
+      newOrder.forEach((item, index) => { item.sequence = index + 1 })
+      localScheduledSongs.value = newOrder
+    }
+    scheduledSongIds.value.add(songId)
+    setSongScheduledFlag(songId, true)
+    hasChanges.value = true
+    if (vibration && navigator.vibrate) navigator.vibrate(vibration)
+  })
 }
 
 // 从排期移除歌曲（点击方式）
@@ -5945,7 +5915,6 @@ const appendBroadcastWarning = (context) => {
   const slots = context.slots.map(slot => `${slot.name} (${slot.startTime}–${slot.endTime})`).join('\n')
   const account = context.account ? text.unattendedAccount(context.account) : text.unattendedAccountOffline
   confirmDialogMessage.value += `\n\n${text.autoBroadcastWarning}\n${slots}\n${account}`
-  confirmDialogType.value = 'danger'
 }
 
 // 发布排期（需要确认）
@@ -5966,7 +5935,7 @@ const publishSchedule = async () => {
     if (songsToPublish.length > 0 && warningCount > 0) {
       confirmDialogTitle.value = locale.value.confirmations.unspecifiedPlayTimeTitle
       confirmDialogMessage.value = locale.value.confirmations.unspecifiedPlayTimePublishWarning(warningCount)
-      confirmDialogType.value = 'danger'
+      confirmDialogType.value = 'warning'
       confirmDialogConfirmText.value = locale.value.confirmations.unspecifiedPlayTimePublishConfirm
     } else if (songsToPublish.length === 0) {
       confirmDialogTitle.value = locale.value.confirmations.deleteScheduleTitle
@@ -6283,10 +6252,6 @@ const handleTouchEnd = (event) => {
       if (touchDragData.value.type === 'song' && (sequenceList || scheduledSong)) {
         // 从左侧拖拽到右侧
         handleTouchDropToSequence(scheduledSong)
-        // 成功拖拽震动反馈
-        if (navigator.vibrate) {
-          navigator.vibrate([30, 50, 30])
-        }
       } else if (touchDragData.value.type === 'schedule' && scheduledSong) {
         // 在右侧重新排序
         handleTouchReorder(scheduledSong)
@@ -6309,43 +6274,15 @@ const handleTouchEnd = (event) => {
   cleanupTouchDrag()
 }
 
-const handleTouchDropToSequence = async (targetElement) => {
+const handleTouchDropToSequence = (targetElement) => {
   const song = touchDragData.value.item
-  if (!canAddToSchedule(song)) return
-  const existingIndex = localScheduledSongs.value.findIndex((s) => s.song.id === song.id)
-  if (existingIndex !== -1) return
-
-  let insertIndex = localScheduledSongs.value.length
-
-  if (targetElement) {
-    const scheduleId = parseInt(targetElement.dataset.scheduleId)
-    const targetIndex = localScheduledSongs.value.findIndex((s) => s.id === scheduleId)
-    if (targetIndex !== -1) {
-      insertIndex = targetIndex
-    }
-  }
-
-  // 直接添加到本地列表，不发送请求
-  const newSchedule = {
-    id: Date.now(),
-    replayRequestId: song.replayRequestId || null,
-    song: song,
-    playDate: selectedDate.value,
-    sequence: insertIndex + 1,
-    isNew: true,
-    isLocalOnly: true
-  }
-
-  scheduledSongIds.value.add(song.id)
-  setSongScheduledFlag(song.id, true)
-  localScheduledSongs.value.splice(insertIndex, 0, newSchedule)
-
-  // 更新序列号
-  localScheduledSongs.value.forEach((item, idx) => {
-    item.sequence = idx + 1
+  const scheduleId = Number(targetElement?.dataset.scheduleId)
+  const index = localScheduledSongs.value.findIndex(item => item.id === scheduleId)
+  placeSongInSchedule(song, song?.id, {
+    dropIndex: index === -1 ? undefined : index,
+    isLocalOnly: true,
+    vibration: [30, 50, 30]
   })
-
-  hasChanges.value = true
 }
 
 const handleTouchReorder = async (targetElement) => {
