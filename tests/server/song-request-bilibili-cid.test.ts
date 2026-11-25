@@ -38,7 +38,9 @@ const modules: Record<string, string> = {
     export const SONG_DURATION_MIN_SECONDS = 0; export const SUBMISSION_NOTE_MAX_LENGTH = 300; export const SUBMISSION_NOTE_STATUS = { PENDING: 'PENDING' };`,
   '~~/server/utils/song-name-normalize': `export const normalizeForMatch = (value) => String(value);`,
   '~~/server/utils/submission-restriction-policy': `export const resolveSubmissionRestrictionPolicy = () => ({ mode: 'off' });`,
-  '~~/server/utils/music-source-plugins/resolver': `export const readSelection = () => null;`
+  '~~/server/utils/music-source-plugins/resolver': `export const readSelection = () => null;`,
+  '~~/server/utils/submission-topic': `export const hasSubmittableTopic = async () => false;
+    export const validateTopicForSubmission = async () => ({ topic: null });`
 }
 
 const compiled = await build({

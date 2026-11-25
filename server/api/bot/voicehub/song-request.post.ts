@@ -187,7 +187,7 @@ export default defineEventHandler(async (event) => {
   let song: any
   try {
     // 机器人无时段选择界面，不套用站点的「时段必选」限制
-    song = await requestSongForUser(event, { id: binding.userId, role: user.role }, payload, { enforceRequiredPlaySlot: false })
+    song = await requestSongForUser(event, { id: binding.userId, role: user.role }, payload, { enforceRequiredPlaySlot: false, enforceRequiredTopic: false })
   } catch (error: any) {
     // 站点侧业务错误保留原错误码；无稳定码的参数错误统一归入通用参数错误。
     if (error?.statusCode) {

@@ -56,5 +56,5 @@ export default defineEventHandler(async (event) => {
   }, {})
 
   // 开放 API 无时段选择界面，不套用站点的「时段必选」限制
-  return await requestSongForUser(event, user, payload, { enforceRequiredPlaySlot: false })
+  return await requestSongForUser(event, user, payload, { enforceRequiredPlaySlot: false, enforceRequiredTopic: false })
 })
