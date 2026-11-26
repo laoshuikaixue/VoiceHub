@@ -1701,13 +1701,8 @@ const filteredSongs = computed(() => {
     )
   }
 
-  // 排序
+  // 排序：完全按所选排序方式，点歌券置顶只在排期管理的待排期列表生效
   filtered.sort((a, b) => {
-    // 使用点歌券的歌曲优先置顶，不随排序方式改变
-    const aCard = a.cardCodeId ? 1 : 0
-    const bCard = b.cardCodeId ? 1 : 0
-    if (aCard !== bCard) return bCard - aCard
-
     switch (sortOption.value) {
       case 'time-desc':
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
