@@ -334,11 +334,11 @@
               <button
                 type="button"
                 :aria-pressed="replaceTitleArtist"
-                class="flex items-center gap-2 px-3 py-2.5 rounded-lg border text-[11px] font-bold transition-all"
+                class="flex items-center gap-2 px-3 py-2.5 text-[11px] font-bold transition-all"
                 :class="
                   replaceTitleArtist
-                    ? 'border-primary-30 bg-primary-10 text-primary'
-                    : 'border-border-secondary bg-bg-tertiary text-text-secondary hover:bg-bg-quaternary'
+                    ? 'text-primary'
+                    : 'text-text-tertiary hover:text-text-secondary'
                 "
                 @click="replaceTitleArtist = !replaceTitleArtist"
               >
