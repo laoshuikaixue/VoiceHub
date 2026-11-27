@@ -330,22 +330,47 @@
                 {{ t('sourceReplace.selectHint') }}
               </p>
             </div>
-            <div class="flex items-center justify-end gap-3 shrink-0">
+            <div class="flex flex-wrap items-center gap-3 shrink-0">
               <button
-                class="px-5 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
-                @click="closeModal"
+                type="button"
+                :aria-pressed="replaceTitleArtist"
+                class="flex items-center gap-2 px-3 py-2.5 rounded-lg border text-[11px] font-bold transition-all"
+                :class="
+                  replaceTitleArtist
+                    ? 'border-primary-30 bg-primary-10 text-primary'
+                    : 'border-border-secondary bg-bg-tertiary text-text-secondary hover:bg-bg-quaternary'
+                "
+                @click="replaceTitleArtist = !replaceTitleArtist"
               >
-                {{ t('sourceReplace.cancel') }}
+                <span
+                  class="w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0"
+                  :class="
+                    replaceTitleArtist
+                      ? 'bg-primary border-primary text-text-primary'
+                      : 'border-border-tertiary'
+                  "
+                >
+                  <Check v-if="replaceTitleArtist" :size="10" />
+                </span>
+                {{ t('sourceReplace.replaceTitleArtist') }}
               </button>
-              <button
-                :disabled="!selected || applying"
-                class="px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                @click="applySelection"
-              >
-                <Loader2 v-if="applying" :size="14" class="animate-spin" />
-                <ArrowLeftRight v-else :size="14" />
-                {{ applying ? t('sourceReplace.applying') : t('sourceReplace.apply') }}
-              </button>
+              <div class="flex items-center gap-3 ml-auto">
+                <button
+                  class="px-5 py-2.5 text-xs font-bold text-text-tertiary hover:text-text-secondary"
+                  @click="closeModal"
+                >
+                  {{ t('sourceReplace.cancel') }}
+                </button>
+                <button
+                  :disabled="!selected || applying"
+                  class="px-6 py-2.5 bg-primary-hover hover:bg-primary text-text-primary text-xs font-black rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  @click="applySelection"
+                >
+                  <Loader2 v-if="applying" :size="14" class="animate-spin" />
+                  <ArrowLeftRight v-else :size="14" />
+                  {{ applying ? t('sourceReplace.applying') : t('sourceReplace.apply') }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -421,6 +446,7 @@ const autoSearchPending = ref(false)
 const selectedKey = ref('')
 const selectedPageIndex = ref(0)
 const applying = ref(false)
+const replaceTitleArtist = ref(false)
 
 const platformResults = ref({})
 const platformStates = ref({})
@@ -804,7 +830,9 @@ const applySelection = async () => {
       musicId,
       cover: cover || '',
       durationSeconds: durationSeconds || null,
-      selectionToken: isPluginPlatform(item.musicPlatform) ? item.selectionToken || '' : ''
+      selectionToken: isPluginPlatform(item.musicPlatform) ? item.selectionToken || '' : '',
+      title: replaceTitleArtist.value ? item.title : null,
+      artist: replaceTitleArtist.value ? item.artist : null
     })
   } finally {
     applying.value = false
@@ -821,6 +849,7 @@ const resetState = () => {
   selectedKey.value = ''
   selectedPageIndex.value = 0
   applying.value = false
+  replaceTitleArtist.value = false
   platformResults.value = {}
   platformStates.value = {}
   platformErrors.value = {}

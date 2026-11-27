@@ -2828,6 +2828,7 @@ export const admin = {
       pageLabel: (page: number) => `P${page}`,
       selectedHint:
         'Platform, music ID and cover will be replaced; duration updates when available, play URL is cleared',
+      replaceTitleArtist: 'Replace title & artist',
       selectHint: 'Select a search result',
       apply: 'Apply',
       applying: 'Fetching info...',
