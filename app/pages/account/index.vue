@@ -335,8 +335,8 @@
             </div>
           </section>
 
-          <!-- 登录条款 -->
-          <section :class="sectionClass">
+          <!-- 登录条款（仅在站点开启登录条款功能时展示） -->
+          <section v-if="legalConsentEnabled" :class="sectionClass">
             <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
               <div class="p-2.5 bg-info-10 rounded-xl flex items-center justify-center"><FileText :size="20" class="text-info" /></div>
               <div>
@@ -591,7 +591,7 @@ const auth = useAuth()
 const router = useRouter()
 const route = useRoute()
 const { showToast } = useToast()
-const { oauthProviders, refreshSiteConfig } = useSiteConfig()
+const { oauthProviders, refreshSiteConfig, legalConsentEnabled } = useSiteConfig()
 const { currentLocale, pages } = useLocale()
 const { localize: localizeServerError } = useServerErrors()
 const locale = computed(() => pages.value?.account || {})
