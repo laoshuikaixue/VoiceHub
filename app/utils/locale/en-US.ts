@@ -587,7 +587,7 @@ export const pages = {
     },
     legalConsent: {
       title: 'Login Terms',
-      desc: 'View configured legal documents or withdraw your consent to the login terms.',
+      desc: 'View all legal documents or withdraw your consent to the login terms.',
       loading: 'Loading legal documents...',
       empty: 'No legal documents available',
       loadFailed: 'Failed to load legal documents',
@@ -1151,7 +1151,7 @@ export const pages = {
       legalConsentBlocked: 'Please read and accept the latest terms before logging in.',
       legalConsentRelatedDocs: 'Related documents',
       legalConsentModalTitle: 'Terms update',
-      legalConsentModalDesc: 'Please read the terms below to continue.',
+      legalConsentModalDesc: 'Please read the terms below to continue.\nYou can withdraw your consent at any time in Account Management.',
       legalConsentReject: 'Reject',
       legalConsentAccept: 'Agree and continue'
     },
