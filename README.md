@@ -1436,6 +1436,7 @@ VoiceHub/
 │   │   │   │   ├── unbind.post.ts   # 解绑邮箱
 │   │   │   │   └── verify-code.post.ts # 验证邮箱验证码
 │   │   │   ├── avatar.post.ts      # 设置 OAuth 头像来源
+│   │   │   ├── legal-consent.revoke.post.ts # 撤回登录条款同意并撤销全部会话
 │   │   │   ├── sessions.delete.ts    # 撤销登录会话
 │   │   │   ├── sessions.get.ts       # 获取登录会话列表
 │   │   │   └── year-review.get.ts   # 获取年度回顾数据

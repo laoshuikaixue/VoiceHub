@@ -585,6 +585,20 @@ export const pages = {
         legacy: 'Legacy'
       }
     },
+    legalConsent: {
+      title: 'Login Terms',
+      desc: 'View configured legal documents or withdraw your consent to the login terms.',
+      loading: 'Loading legal documents...',
+      empty: 'No legal documents available',
+      loadFailed: 'Failed to load legal documents',
+      revoke: 'Withdraw consent',
+      revokeDesc: 'Withdrawing clears your consent record and signs out all devices. You must agree to the terms again at next sign-in.',
+      revokeTitle: 'Withdraw consent to login terms',
+      revokeConfirm: 'Withdraw your consent to the login terms? This signs out all devices and requires re-agreement at next sign-in.',
+      revokeCancel: 'Cancel',
+      revokeSuccess: 'Consent withdrawn and all devices signed out',
+      revokeFailed: 'Failed to withdraw consent'
+    },
     social: {
       title: 'Social Account Binding',
       desc: 'Bind social accounts to receive real-time push notifications',

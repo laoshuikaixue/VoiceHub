@@ -334,6 +334,41 @@
               <button v-if="sessions.length > 1" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-error-20 bg-error-10 hover:bg-error-15 text-error text-xs font-bold rounded-xl transition-all disabled:opacity-50" :disabled="sessionsRevoking" @click="revokeOtherSessions"><LogOut :size="14" />{{ locale.sessions.logoutOthers }}</button>
             </div>
           </section>
+
+          <!-- 登录条款 -->
+          <section :class="sectionClass">
+            <div class="flex items-center gap-3 border-b border-border-secondary-50 pb-5 mb-6">
+              <div class="p-2.5 bg-info-10 rounded-xl flex items-center justify-center"><FileText :size="20" class="text-info" /></div>
+              <div>
+                <h2 class="text-base font-black text-text-primary">{{ locale.legalConsent.title }}</h2>
+                <p class="text-xs text-text-tertiary mt-0.5">{{ locale.legalConsent.desc }}</p>
+              </div>
+            </div>
+
+            <div v-if="legalDocumentsLoading" class="flex items-center justify-center gap-2 py-8 text-xs text-text-tertiary"><RefreshCw :size="16" class="animate-spin" />{{ locale.legalConsent.loading }}</div>
+            <div v-else-if="legalDocuments.length === 0" class="py-8 text-center text-xs text-text-tertiary">{{ locale.legalConsent.empty }}</div>
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <a
+                v-for="doc in legalDocuments"
+                :key="doc.slug"
+                :href="`/legal/${doc.slug}`"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-start gap-3 rounded-2xl border border-border-secondary-70 bg-bg-primary-45 p-4 hover:bg-bg-tertiary transition-all"
+              >
+                <div class="w-10 h-10 shrink-0 rounded-xl bg-bg-tertiary flex items-center justify-center text-text-secondary"><FileText :size="19" /></div>
+                <div class="min-w-0">
+                  <p class="text-sm font-black text-text-primary truncate">{{ doc.name }}</p>
+                  <p class="text-xs text-text-tertiary mt-1">/legal/{{ doc.slug }}</p>
+                </div>
+              </a>
+            </div>
+
+            <div class="border-t border-border-secondary-50 mt-6 pt-5">
+              <button class="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-error-20 bg-error-10 hover:bg-error-15 text-error text-xs font-bold rounded-xl transition-all disabled:opacity-50" :disabled="legalConsentRevoking || legalDocumentsLoading" @click="showLegalConsentRevokeDialog = true"><ShieldOff :size="14" />{{ locale.legalConsent.revoke }}</button>
+              <p class="text-xs text-text-tertiary mt-2">{{ locale.legalConsent.revokeDesc }}</p>
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -348,6 +383,17 @@
       :loading="apiKeyDeletingId !== null"
       @confirm="confirmDeletePersonalApiKey"
       @cancel="cancelDeletePersonalApiKey"
+    />
+
+    <ConfirmDialog
+      v-model:show="showLegalConsentRevokeDialog"
+      type="danger"
+      :title="locale.legalConsent.revokeTitle"
+      :message="locale.legalConsent.revokeConfirm"
+      :confirm-text="locale.legalConsent.revoke"
+      :cancel-text="locale.legalConsent.revokeCancel"
+      :loading="legalConsentRevoking"
+      @confirm="confirmRevokeLegalConsent"
     />
 
     <Teleport to="body">
@@ -516,6 +562,7 @@ import {
   Copy,
   Eye,
   EyeOff,
+  FileText,
   KeyRound,
   Link as LinkIcon,
   ListMusic,
@@ -525,6 +572,7 @@ import {
   Play,
   Plus,
   RefreshCw,
+  ShieldOff,
   Trash2,
   User,
   X
@@ -580,6 +628,38 @@ const apiKeyLogsPagination = ref({
 const sessions = ref([])
 const sessionsLoading = ref(false)
 const sessionsRevoking = ref(false)
+
+// 登录条款文档与撤回同意
+const legalDocuments = ref([])
+const legalDocumentsLoading = ref(false)
+const legalConsentRevoking = ref(false)
+const showLegalConsentRevokeDialog = ref(false)
+const loadLegalDocuments = async () => {
+  legalDocumentsLoading.value = true
+  try {
+    const response = await $fetch('/api/legal-documents')
+    legalDocuments.value = Array.isArray(response?.documents) ? response.documents : []
+  } catch (error) {
+    showToast(localizeServerError(error, locale.value.legalConsent.loadFailed), 'error')
+  } finally {
+    legalDocumentsLoading.value = false
+  }
+}
+const confirmRevokeLegalConsent = async () => {
+  legalConsentRevoking.value = true
+  try {
+    await $fetch('/api/user/legal-consent.revoke', { method: 'POST' })
+    showLegalConsentRevokeDialog.value = false
+    showToast(locale.value.legalConsent.revokeSuccess, 'success')
+    // 服务端已撤销全部会话（含当前），此处仅清本地登录态并跳转登录页
+    await auth.logout(false)
+    await navigateTo('/login')
+  } catch (error) {
+    showToast(localizeServerError(error, locale.value.legalConsent.revokeFailed), 'error')
+  } finally {
+    legalConsentRevoking.value = false
+  }
+}
 
 // 音源设置（ChKSz apikey，仅存本浏览器 localStorage）
 const { chkszApiKey, clearChkszKey, verifyChkszKey } = useChkszSource()
@@ -644,6 +724,7 @@ onMounted(() => {
   refreshSiteConfig()
   loadPersonalApiKeys()
   loadSessions()
+  loadLegalDocuments()
   chkszKeyInput.value = chkszApiKey.value || ''
 
   if (route.query.message) {
