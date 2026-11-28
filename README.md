@@ -689,7 +689,7 @@ VoiceHub 实现了细粒度的权限控制系统：
 | REDIS_KEY_PREFIX       | 否   | Redis键命名空间，多环境共用Redis时应分别设置            | `voicehub:v2:`                                                                                                                                  |
 | NITRO_PRESET           | 否   | Nitro预设                                               | `vercel`                                                                                                                                        |
 | IS_SERVERLESS          | 否   | 声明为 Serverless 运行环境（连接池压低、备份改为直接返回数据、群事件投递器不启动）。平台未注入 `VERCEL`/`NETLIFY` 且未设置 `NITRO_PRESET` 时用它，如 EdgeOne Pages | `true` |
-| NUXT_PUBLIC_HOST       | 否   | 显式配置站点外部地址后启用内部 API 的 CORS 来源校验；未配置时仅对回环 Host（反向代理常见场景）跳过，云平台公开 Host 仍校验 | `https://your-app.com` |
+| NUXT_PUBLIC_HOST       | 否   | 站点外部地址，用于内部 API 来源校验；使用 AstrBot 绑定链接时必填 | `https://your-app.com` |
 | NUXT_PUBLIC_SEO_CONFIG | 否   | 用于自定义 PWA/SEO 配置的 JSON 字符串                   | `{"title":"VoiceHub校园广播站点歌系统","shortName":"校园广播","description":"校园广播站点歌系统 - 让你的声音被听见","logo":"/images/logo.png"}` |
 
 ## OAuth 配置
@@ -972,6 +972,8 @@ VoiceHub/
 │   │   ├── change-password.vue # 修改密码页面
 │   │   ├── dashboard.vue       # 用户仪表盘
 │   │   ├── forgot-password.vue # 找回密码页面
+│   │   ├── bind/               # 机器人绑定确认页
+│   │   │   └── [token].vue     # 登录后确认绑定链接
 │   │   ├── index.vue           # 首页
 │   │   ├── legal/              # 协议文档页面
 │   │   │   └── [slug].vue      # 协议文档内容页
@@ -1337,6 +1339,8 @@ VoiceHub/
 │   │   ├── notifications/  # 通知系统API
 │   │   │   ├── astrbot/             # AstrBot 绑定码、状态、解绑与测试推送
 │   │   │   │   ├── bind-code.post.ts # 发放指定平台的绑定码
+│   │   │   │   ├── bind-ticket.get.ts # 预览绑定链接（只读，不落库）
+│   │   │   │   ├── bind-ticket.post.ts # 登录后确认绑定链接
 │   │   │   │   ├── status.get.ts     # 查询四平台绑定状态
 │   │   │   │   ├── test.post.ts      # 向当前绑定目标发送测试推送
 │   │   │   │   └── unbind.post.ts    # 解除指定平台的绑定
@@ -1355,6 +1359,7 @@ VoiceHub/
 │   │   ├── bot/            # AstrBot 插件令牌回调
 │   │   │   ├── voicehub/            # 私聊绑定、歌单与投递回调
 │   │   │   │   ├── bind.post.ts     # 一次性绑定码换取会话绑定
+│   │   │   │   ├── bind-link.post.ts # 会话内发起绑定，返回一次性确认链接
 │   │   │   │   ├── unbind.post.ts   # 机器人侧解绑当前会话
 │   │   │   │   ├── verify-targets.post.ts # 推送前核对私聊绑定、通知开关与群授权
 │   │   │   │   ├── pull.post.ts     # 领取待投递通知（pull 模式下插件轮询）
@@ -1363,7 +1368,7 @@ VoiceHub/
 │   │   │   │   ├── song-sources.get.ts # 机器人侧可用音源平台列表
 │   │   │   │   ├── song-resolve.post.ts # 机器人侧分享链接解析点歌
 │   │   │   │   ├── song-request.post.ts # 机器人侧点歌投稿
-│   │   │   │   ├── password-reset.post.ts # 机器人侧两步确认重置密码
+│   │   │   │   ├── password-reset.post.ts # 私聊会话授权后的两步密码重置
 │   │   │   │   └── weekly-schedule.get.ts # 本周歌单（支持 format=text 纯文本）
 │   │   ├── open/           # 开放API（无需认证）
 │   │   │   ├── card-codes/          # 点歌券开放API
@@ -1436,6 +1441,7 @@ VoiceHub/
 │   │   │   │   ├── unbind.post.ts   # 解绑邮箱
 │   │   │   │   └── verify-code.post.ts # 验证邮箱验证码
 │   │   │   ├── avatar.post.ts      # 设置 OAuth 头像来源
+│   │   │   ├── legal-consent.revoke.post.ts # 撤回登录条款同意并撤销全部会话
 │   │   │   ├── sessions.delete.ts    # 撤销登录会话
 │   │   │   ├── sessions.get.ts       # 获取登录会话列表
 │   │   │   └── year-review.get.ts   # 获取年度回顾数据
@@ -1489,6 +1495,8 @@ VoiceHub/
 │   │   ├── apiError.ts     # 统一错误码抛出助手 createApiError
 │   │   ├── apiKeyUtils.ts  # API Key生成、哈希与校验
 │   │   ├── astrbot-notification.ts # AstrBot 绑定码与目标校验
+│   │   ├── astrbot-bind-ticket.ts # AstrBot 绑定票据读取与状态校验
+│   │   ├── astrbot-password-reset.ts # 机器人密码恢复授权校验与确认凭据
 │   │   ├── astrbot-adapters.js # 适配器平台映射（绑定鉴权与恢复共用）
 │   │   ├── astrbot-platforms.ts # 机器人四平台开关与目标筛选
 │   │   ├── astrbot-group.ts # 群广播目标与群事件配置规范化
@@ -1497,7 +1505,6 @@ VoiceHub/
 │   │   ├── astrbot-share-link.ts # 点歌分享链接识别与 ID 提取
 │   │   ├── astrbot-song-search.ts # 机器人点歌统一音源搜索与候选归一化
 │   │   ├── astrbot-song-sources.ts # 机器人点歌各音源原始搜索取数
-│   │   ├── astrbot-password-reset.ts # 机器人重置密码两步确认密封令牌
 │   │   ├── astrbot-weekly-config.ts # 本周歌单显示配置与排版归一化（唯一权威）
 │   │   ├── astrbot-error-telemetry.ts # 群聊异常通知的脱敏与限长
 │   │   ├── astrbot-backup.ts # 四平台绑定备份恢复

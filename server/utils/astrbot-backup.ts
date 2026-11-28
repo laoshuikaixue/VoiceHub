@@ -17,7 +17,7 @@ export async function restoreAstrbotBindings(tx: any, userId: number, record: an
     await tx.insert(astrbotBindings).values({ userId, platform, adapter: binding.adapter,
       umo: binding.umo, ...(boundAt ? { boundAt } : {}) })
       .onConflictDoUpdate({ target: [astrbotBindings.userId, astrbotBindings.platform],
-        set: { adapter: binding.adapter, umo: binding.umo,
+        set: { adapter: binding.adapter, umo: binding.umo, passwordResetGrantId: null,
           ...(boundAt ? { boundAt } : {}) } })
   }
 }

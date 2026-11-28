@@ -91,7 +91,7 @@ const handleReject = async () => {
 .legal-consent-overlay { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); }
 .legal-consent-modal { width: min(600px, 100%); max-height: 90vh; overflow: auto; padding: 28px; border: 1px solid var(--border-secondary); border-radius: 18px; background: var(--bg-secondary); color: var(--text-primary); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 .legal-consent-modal h3 { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
-.legal-consent-modal p { color: var(--text-secondary); font-size: 13px; line-height: 1.7; padding-bottom: 20px; border-bottom: 1px solid var(--border-secondary); }
+.legal-consent-modal p { color: var(--text-secondary); font-size: 13px; line-height: 1.7; padding-bottom: 20px; border-bottom: 1px solid var(--border-secondary); white-space: pre-line; }
 .legal-consent-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; min-width: 0; }
 .legal-consent-heading h3 { margin: 0; }
 .legal-consent-shield { display: grid; place-items: center; flex: 0 0 50px; width: 50px; height: 50px; border-radius: 12px; background: var(--info-light); color: var(--info); }

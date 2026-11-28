@@ -7,6 +7,7 @@ import { createApiError } from '~~/server/utils/apiError'
 import { SERVER_ERROR_CODES } from '~~/server/config/constants'
 import { getServerDate } from '~~/server/utils/serverTime'
 import { isUniqueViolation } from '~~/server/utils/db-errors'
+import { isSameAstrbotBinding, loadOwnAstrbotBinding } from '~~/server/utils/astrbot-bind-ticket'
 import {
   ASTRBOT_TOKEN_HEADER, equalAstrbotToken, hashAstrbotBindCode, parseAstrbotPrivateUmo
 } from '~~/server/utils/astrbot-notification'
@@ -47,6 +48,11 @@ export default defineEventHandler(async (event) => {
       if (owner && owner.id !== codeRow.userId) {
         throw createApiError(409, SERVER_ERROR_CODES.ASTRBOT_UMO_BOUND, '此会话已绑定其他账号')
       }
+      const [current] = await loadOwnAstrbotBinding(tx, codeRow.userId, requestedPlatform)
+      const sameBinding = isSameAstrbotBinding(current, { umo: target.umo, adapter: target.platform })
+      if (current && !sameBinding) {
+        throw createApiError(409, SERVER_ERROR_CODES.ASTRBOT_ACCOUNT_ALREADY_BOUND, '请先解绑当前平台的已有会话')
+      }
 
       const [claim] = await tx.update(astrbotBindingCodes)
         .set({ consumedAt: getServerDate() })
@@ -60,10 +66,10 @@ export default defineEventHandler(async (event) => {
       if (!claim) {
         throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_BIND_CODE_INVALID, '绑定码无效、已过期或已使用')
       }
-      await tx.insert(astrbotBindings).values({ userId: codeRow.userId, platform: requestedPlatform,
-        adapter: target.platform, umo: target.umo, boundAt: getServerDate() })
-        .onConflictDoUpdate({ target: [astrbotBindings.userId, astrbotBindings.platform],
-          set: { adapter: target.platform, umo: target.umo, boundAt: getServerDate() } })
+      if (!sameBinding) {
+        await tx.insert(astrbotBindings).values({ userId: codeRow.userId, platform: requestedPlatform,
+          adapter: target.platform, umo: target.umo, boundAt: getServerDate() })
+      }
       return { success: true, username: account.username }
     })
   } catch (error) {

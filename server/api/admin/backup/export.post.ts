@@ -83,7 +83,8 @@ export default defineEventHandler(async (event) => {
         query: async () => {
           const usersData = await db.select().from(users)
           const settingsData = await db.select().from(notificationSettings)
-          const bindingData = await db.select().from(astrbotBindings)
+          const bindingData = await db.select({ userId: astrbotBindings.userId, platform: astrbotBindings.platform,
+            adapter: astrbotBindings.adapter, umo: astrbotBindings.umo, boundAt: astrbotBindings.boundAt }).from(astrbotBindings)
 
           // 手动关联通知设置
           return usersData.map((user) => ({

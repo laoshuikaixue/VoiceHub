@@ -1310,6 +1310,7 @@
     <SongSourceReplaceModal
       :show="showSourceReplaceModal"
       :song="sourceReplaceSong"
+      allow-replace-title-artist
       @close="showSourceReplaceModal = false"
       @apply="applySourceReplacement"
     />
@@ -2445,6 +2446,9 @@ const applySourceReplacement = (payload) => {
   editForm.value.musicId = payload.musicId || ''
   if (payload.cover) editForm.value.cover = payload.cover
   if (payload.durationSeconds != null) editForm.value.durationSeconds = payload.durationSeconds
+  // 勾选时同步采用新音源的歌名与歌手
+  if (payload.title) editForm.value.title = payload.title
+  if (payload.artist) editForm.value.artist = payload.artist
   // 旧播放地址指向原音源，换源后必须清空避免继续使用旧链接
   editForm.value.playUrl = ''
   editSourceSelection.value = payload.selectionToken

@@ -277,6 +277,9 @@
             <p class="text-[10px] text-text-disabled font-black uppercase tracking-widest mb-1">{{ locale.astrbot.boundUser }}</p>
             <p class="text-sm font-black text-text-primary truncate">{{ platformStatus[platform].boundUser || locale.astrbot.bound }}</p>
             <p v-if="platformStatus[platform].boundAt" class="text-[11px] text-text-tertiary mt-1">{{ locale.astrbot.boundAt }} {{ platformStatus[platform].boundAt }}</p>
+            <p v-if="platformStatus[platform].passwordResetGranted" class="text-xs text-text-secondary mt-1">
+              {{ locale.astrbot.passwordResetGranted }}
+            </p>
           </div>
           <div class="flex flex-wrap gap-2">
             <button :disabled="astrbotBusy[platform]" class="inline-flex items-center gap-2 px-3 py-2 bg-bg-tertiary border border-border-secondary hover:border-border-tertiary text-text-secondary text-xs font-bold rounded-xl transition-all disabled:opacity-50" @click="testAstrbot(platform)"><Send :size="13" />{{ locale.astrbot.test }}</button>

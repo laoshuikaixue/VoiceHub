@@ -428,6 +428,13 @@
       "when": 1794059064730,
       "tag": "20261107134424_admin_audit_logs_and_log_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1795358003972,
+      "tag": "20261122143323_add_astrbot_binding_ticket_and_reset_grant",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { isAstrbotPrivateUmoShape } from './astrbot-platforms.ts'
 
 export const ASTRBOT_TOKEN_HEADER = 'x-voicehub-token'
@@ -14,6 +14,29 @@ export function createAstrbotBindCode() {
 
 export function hashAstrbotBindCode(code: string) {
   return createHash('sha256').update(code).digest('hex')
+}
+
+/** 绑定链接票据与绑定码同源防护：只存摘要，原文仅出现在链接中一次。 */
+export const ASTRBOT_BIND_TICKET_TTL_SECONDS = 600
+
+export function createAstrbotBindTicket() {
+  return randomBytes(24).toString('hex')
+}
+
+export function hashAstrbotBindTicket(token: string, botToken: string) {
+  return createHmac('sha256', botToken).update('astrbot-bind-ticket:').update(token).digest('hex')
+}
+
+export function makeAstrbotBindConfirmation(
+  ticketHash: string,
+  botToken: string,
+  userId: number,
+  sessionId: string,
+  tokenVersion: number
+) {
+  return createHmac('sha256', botToken)
+    .update(JSON.stringify(['astrbot-bind-confirmation', ticketHash, userId, sessionId, tokenVersion]))
+    .digest('hex')
 }
 
 export function equalAstrbotToken(actual: string, expected: string) {
