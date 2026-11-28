@@ -147,7 +147,7 @@ const normalizeLyricMatchText = (value: string): string => {
     .toLowerCase()
     .replace(/\b(?:feat|ft)\.?\s*/gi, '')
     .replace(/[&＆]/g, 'and')
-    .replace(/[、;，,/|()（）·・\s\-_'"`~!?？！.。《》【】\[\]{}^*@#$%+=\\]+/g, '')
+    .replace(/[、;，,/|()（）·・\s\-_'"‘’“”`~!?？！.。《》【】\[\]{}^*@#$%+=\\]+/g, '')
 }
 
 /** 双向 includes */
