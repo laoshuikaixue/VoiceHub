@@ -2774,6 +2774,7 @@ export const admin = {
       selectPage: '选择分P',
       pageLabel: (page: number) => `P${page}`,
       selectedHint: '应用后将替换平台、音乐 ID 与封面，可用时更新时长，并清空播放地址',
+      replaceTitleArtist: '同时替换歌名与歌手',
       selectHint: '选择一条搜索结果',
       apply: '应用替换',
       applying: '获取信息中...',
