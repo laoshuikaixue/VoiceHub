@@ -803,6 +803,11 @@ export default defineNuxtConfig({
         }
       },
       // 认证相关页面不缓存
+      '/bind/**': {
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      },
       '/login': {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',

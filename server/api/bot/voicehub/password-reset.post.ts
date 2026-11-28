@@ -1,176 +1,109 @@
-import { defineEventHandler, getHeader, readBody } from 'h3'
+import { createHash } from 'node:crypto'
+import { defineEventHandler, getHeader, readBody, setResponseHeader } from 'h3'
+import { and, eq } from 'drizzle-orm'
 import { db } from '~/drizzle/db'
-import { astrbotBindings, systemSettings, users } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
-import { createApiError } from '~~/server/utils/apiError'
-import { SERVER_ERROR_CODES } from '~~/server/config/constants'
-import {
-  ASTRBOT_TOKEN_HEADER,
-  equalAstrbotToken
-} from '~~/server/utils/astrbot-notification'
-import { getClientIP } from '~~/server/utils/ip-utils'
-import {
-  adapterToAstrbotPlatform,
-  isAstrbotPlatformEnabled,
-  isAstrbotPrivateUmoShape
-} from '~~/server/utils/astrbot-platforms'
-import type { AstrbotPlatform } from '~~/server/utils/astrbot-platforms'
-import { enqueueAstrbotNotifications } from '~~/server/services/astrbotOutboxService'
-import { updateUserPassword } from '~~/server/services/userService'
+import { astrbotBindings, users } from '~/drizzle/schema'
 import { getPasswordPolicyViolation } from '~/utils/password-policy'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import { enqueueAstrbotNotifications } from '~~/server/services/astrbotOutboxService'
+import { consumePasswordRateLimit, getPasswordAuditContext, PASSWORD_AUDIT_ACTIONS, recordPasswordAudit } from '~~/server/services/passwordSecurityService'
+import { updateUserPassword } from '~~/server/services/userService'
+import { createApiError } from '~~/server/utils/apiError'
+import { loadAstrbotBindSettings } from '~~/server/utils/astrbot-bind-ticket'
+import { ASTRBOT_TOKEN_HEADER, equalAstrbotToken } from '~~/server/utils/astrbot-notification'
 import {
-  PASSWORD_AUDIT_ACTIONS,
-  consumePasswordRateLimit,
-  getPasswordAuditContext,
-  recordPasswordAudit
-} from '~~/server/services/passwordSecurityService'
-import {
-  createPendingPasswordReset,
-  consumePendingPasswordReset
+  ASTRBOT_PASSWORD_RESET_TTL_SECONDS,
+  astrbotPasswordResetDenied,
+  canUseAstrbotPasswordReset,
+  createAstrbotResetChallenge,
+  readAstrbotResetChallenge
 } from '~~/server/utils/astrbot-password-reset'
+import { adapterToAstrbotPlatform, isAstrbotPlatformEnabled, isAstrbotPrivateUmoShape, parseAstrbotPlatform } from '~~/server/utils/astrbot-platforms'
+import { getClientIP } from '~~/server/utils/ip-utils'
+import { lockPermissionChanges } from '~~/server/utils/permission-admin'
+import { getRolePermissionTemplatesCached } from '~~/server/utils/system-settings-helper'
 
-/**
- * 机器人重置密码（两步确认，仅私聊绑定会话）：
- *
- * 第一步 POST { umo, step: 'init', password }：
- *   校验绑定与密码策略后创建 5 分钟 pending，返回 { pendingToken }。
- *   不改密码、不发通知。
- *
- * 第二步 POST { umo, step: 'confirm', pendingToken, password }：
- *   必须携带同一密码（两次输入一致）与未过期的 pendingToken（由服务端用
- *   JWT_SECRET 密封签发、插件原样回传，插件无法伪造；服务端按 jti 记录
- *   一次性消费，防「跳过确认」与重放）。执行 updateUserPassword（踢旧会话、
- *   bump tokenVersion）、记录 bot 渠道审计，并把成功通知入队到发起 umo
- *   所在渠道（enqueueAstrbotNotifications 按 binding.platform 过滤）。
- *
- * 频控：两步共享 consumePasswordRateLimit（10 分钟窗口）。
- * 错误文案永不回显密码。
- *
- * 安全定级：持有有效 astrbot 令牌即可改任何已绑定账号的密码，权限上界
- * 等于站点凭据入口本身，与用户直接用密码登录同量级；令牌泄露面由
- * 两步确认 + 频控 + 审计 + 成功通知兼顾缓解。
- */
-
-function readPassword(value: unknown): string {
-  return typeof value === 'string' ? value : ''
-}
+const digest = (value: string) => createHash('sha256').update(value).digest('hex')
+const invalidConfirmation = () => createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS,
+  '确认无效或已过期，请重新发起密码重置')
+const invalidBotToken = () => createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '机器人令牌无效')
 
 export default defineEventHandler(async (event) => {
-  const [settings] = await db
-    .select({
-      token: systemSettings.astrbotToken,
-      enabled: systemSettings.astrbotEnabled,
-      platforms: systemSettings.astrbotPlatforms
-    })
-    .from(systemSettings)
-    .limit(1)
+  setResponseHeader(event, 'Cache-Control', 'no-store')
+  const botToken = getHeader(event, ASTRBOT_TOKEN_HEADER) ?? ''
+  if (!botToken) throw invalidBotToken()
+  const [settings] = await loadAstrbotBindSettings(db)
+  if (!settings?.enabled || !equalAstrbotToken(botToken, settings.token ?? '')) throw invalidBotToken()
 
-  if (!settings?.enabled || !equalAstrbotToken(getHeader(event, ASTRBOT_TOKEN_HEADER) ?? '', settings.token ?? '')) {
-    throw createApiError(401, SERVER_ERROR_CODES.NOTIFICATION_AUTH_REQUIRED, '机器人令牌无效')
-  }
-
-  const body = await readBody<Record<string, unknown> | null>(event)
-  const umo: unknown = body?.umo
-
+  const { umo, step, password, pendingToken } = (await readBody(event)) ?? {}
   if (!isAstrbotPrivateUmoShape(umo)) {
     throw createApiError(400, SERVER_ERROR_CODES.ASTRBOT_UMO_INVALID, '私聊会话无效')
   }
+  const [binding] = await db.select().from(astrbotBindings).where(eq(astrbotBindings.umo, umo)).limit(1)
+  const platform = parseAstrbotPlatform(binding?.platform)
+  if (!binding?.passwordResetGrantId || !platform || adapterToAstrbotPlatform(binding.adapter) !== platform ||
+    !isAstrbotPlatformEnabled(settings.platforms, platform)) throw astrbotPasswordResetDenied()
+  const [account] = await db.select().from(users).where(eq(users.id, binding.userId)).limit(1)
+  if (!account || !canUseAstrbotPasswordReset(account, await getRolePermissionTemplatesCached())) {
+    throw astrbotPasswordResetDenied()
+  }
 
-  const step = body?.step === 'confirm' ? 'confirm' : 'init'
-
-  const pendingToken = readPassword(body?.pendingToken)
-  const password = readPassword(body?.password)
-  if (!password || password.length > 128) {
+  const action = PASSWORD_AUDIT_ACTIONS.RESET_PASSWORD
+  const limit = await consumePasswordRateLimit(binding.userId, getClientIP(event), action, 10)
+  if (!limit.allowed) {
+    throw createApiError(429, SERVER_ERROR_CODES.AUTH_RATE_LIMITED_SECONDS, '重置密码尝试次数过多',
+      { params: [limit.retryAfterSeconds] })
+  }
+  if (typeof password !== 'string' || !password || password.length > 128) {
     throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '请提供 128 字符以内的新密码')
   }
+  const violation = getPasswordPolicyViolation(password)
+  if (violation) throw createApiError(400, violation.code, violation.message)
 
-  // 校验绑定状态：总开关 + 平台开关 + 适配器归类（与其余 bot 端点同口径）
-  const [binding] = await db
-    .select({ userId: astrbotBindings.userId, platform: astrbotBindings.platform, adapter: astrbotBindings.adapter })
-    .from(astrbotBindings)
-    .where(eq(astrbotBindings.umo, umo))
-    .limit(1)
-  if (!binding || !isAstrbotPlatformEnabled(settings.platforms, binding.platform) ||
-    adapterToAstrbotPlatform(binding.adapter) !== binding.platform) {
-    throw createApiError(403, SERVER_ERROR_CODES.ASTRBOT_UMO_UNBOUND, '该会话未绑定 VoiceHub 账号')
-  }
-
-  // 取绑定账号真实状态（与 song-request 同口径）：封禁/注销账号不得改密；放在频控前，封禁拒绝不消耗配额
-  const [user] = await db
-    .select({ id: users.id, status: users.status })
-    .from(users)
-    .where(eq(users.id, binding.userId))
-    .limit(1)
-  if (!user || user.status !== 'active') {
-    await recordPasswordAudit(event, binding.userId, PASSWORD_AUDIT_ACTIONS.RESET_PASSWORD, false, '绑定账号不可用')
-    throw createApiError(403, SERVER_ERROR_CODES.ASTRBOT_UMO_UNBOUND, '绑定账号不可用')
-  }
-
-  const auditAction = PASSWORD_AUDIT_ACTIONS.RESET_PASSWORD
-  const rateLimit = await consumePasswordRateLimit(binding.userId, getClientIP(event), auditAction, 10)
-  if (!rateLimit.allowed) {
-    await recordPasswordAudit(event, binding.userId, auditAction, false, '操作频率超过限制')
-    const retryAfterMinutes = Math.max(1, Math.ceil(rateLimit.retryAfterSeconds / 60))
-    throw createApiError(
-      429,
-      SERVER_ERROR_CODES.AUTH_RATE_LIMITED_MINUTES,
-      `重置密码尝试过于频繁，请 ${retryAfterMinutes} 分钟后再试`,
-      { params: [retryAfterMinutes] }
-    )
-  }
-
-  // 密码策略：与站点注册/改密同源
-  const policyViolation = getPasswordPolicyViolation(password)
-  if (policyViolation) {
-    await recordPasswordAudit(event, binding.userId, auditAction, false, policyViolation.message)
-    throw createApiError(400, policyViolation.code, policyViolation.message)
-  }
-
-  if (step === 'init') {
-    const pending = createPendingPasswordReset({ umo, userId: binding.userId, password })
+  const challenge = { userId: binding.userId, umo, grantId: binding.passwordResetGrantId,
+    tokenVersion: account.tokenVersion, botTokenHash: digest(botToken), passwordHash: digest(password) }
+  if (step === undefined || step === 'init') {
     return {
-      success: true,
-      step: 'init',
-      pendingToken: pending.pendingToken,
-      expiresInSeconds: pending.expiresInSeconds,
-      message: '请回复「/广播 重置密码 确认 <新密码>」完成重置（5 分钟内有效）。'
+      success: true, step: 'init', pendingToken: createAstrbotResetChallenge(challenge),
+      expiresInSeconds: ASTRBOT_PASSWORD_RESET_TTL_SECONDS,
+      message: '请在 5 分钟内回复「/广播 重置密码 确认 <新密码>」。'
     }
   }
 
-  // confirm：pendingToken 必须存在且未被消费（一次性），密码须与第一步一致
-  const consumed = consumePendingPasswordReset(pendingToken)
-  if (!consumed || consumed.userId !== binding.userId || consumed.umo !== umo) {
-    await recordPasswordAudit(event, binding.userId, auditAction, false, '确认令牌无效或已过期')
-    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '确认已过期或不正确，请重新发起：/广播 重置密码 <新密码>')
-  }
-  if (consumed.password !== password) {
-    await recordPasswordAudit(event, binding.userId, auditAction, false, '两次输入的新密码不一致')
-    throw createApiError(400, SERVER_ERROR_CODES.COMMON_INVALID_PARAMS, '两次输入的新密码不一致，请重新发起：/广播 重置密码 <新密码>')
+  const pending = step === 'confirm' ? readAstrbotResetChallenge(pendingToken) : null
+  if (!pending || pending.userId !== challenge.userId || pending.umo !== challenge.umo ||
+    pending.grantId !== challenge.grantId || pending.tokenVersion !== challenge.tokenVersion ||
+    pending.botTokenHash !== challenge.botTokenHash || !equalAstrbotToken(pending.passwordHash, challenge.passwordHash)) {
+    await recordPasswordAudit(event, binding.userId, action, false, '机器人改密确认无效')
+    throw invalidConfirmation()
   }
 
-  let passwordChangedAt: Date
+  const { passwordChangedAt } = await db.transaction(async (tx) => {
+    // 权限变更、解绑和会话授权检查必须先于密码写入。
+    await lockPermissionChanges(tx)
+    const [freshSettings] = await loadAstrbotBindSettings(tx, true)
+    if (!freshSettings?.enabled || !equalAstrbotToken(botToken, freshSettings.token ?? '')) throw invalidBotToken()
+    if (!isAstrbotPlatformEnabled(freshSettings.platforms, platform)) throw astrbotPasswordResetDenied()
+    const [fresh] = await tx.select().from(users).where(eq(users.id, binding.userId)).for('update')
+    const [current] = await tx.select().from(astrbotBindings).where(and(
+      eq(astrbotBindings.userId, binding.userId), eq(astrbotBindings.platform, platform)
+    )).for('update')
+    if (!fresh || !current || current.umo !== umo || current.adapter !== binding.adapter ||
+      current.passwordResetGrantId !== pending.grantId ||
+      !canUseAstrbotPasswordReset(fresh, await getRolePermissionTemplatesCached(tx))) {
+      throw astrbotPasswordResetDenied()
+    }
+    if (fresh.tokenVersion !== pending.tokenVersion || !readAstrbotResetChallenge(pendingToken)) throw invalidConfirmation()
+    return updateUserPassword(binding.userId, password, {
+      executor: tx, expectedTokenVersion: pending.tokenVersion,
+      auditContext: { action, ...getPasswordAuditContext(event) }
+    })
+  })
+
   try {
-    ;({ passwordChangedAt } = await updateUserPassword(binding.userId, password, {
-      auditContext: { action: auditAction, ...getPasswordAuditContext(event) }
-    }))
+    await enqueueAstrbotNotifications([binding.userId], '密码重置成功', '你的 VoiceHub 密码已通过机器人重置。', platform)
   } catch (error) {
-    // 改密执行失败必须落审计，否则只有频控/策略类拒绝可见，写入故障无痕迹
-    await recordPasswordAudit(event, binding.userId, auditAction, false, '密码写入失败')
-    throw error
+    console.error('[AstrBot] 密码重置通知入队失败', error)
   }
-
-  // 成功通知按绑定平台过滤投递（同平台多绑定会话均会收到）
-  await enqueueAstrbotNotifications(
-    [binding.userId],
-    '密码重置成功',
-    '你的 VoiceHub 账号密码已通过机器人重置。如非本人操作，请立即联系管理员。',
-    binding.platform as AstrbotPlatform
-  )
-
-  return {
-    success: true,
-    step: 'confirm',
-    message: '密码重置成功',
-    passwordChangedAt
-  }
+  return { success: true, step: 'confirm', message: '密码重置成功', passwordChangedAt }
 })

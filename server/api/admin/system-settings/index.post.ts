@@ -1,7 +1,7 @@
 import { hasAdminPermission, PRIV_LOGS } from '~~/app/utils/admin-permissions'
 import { db } from '~/drizzle/db'
-import { systemSettings } from '~/drizzle/schema'
-import { eq } from 'drizzle-orm'
+import { astrbotBindings, astrbotBindTickets, systemSettings } from '~/drizzle/schema'
+import { eq, isNotNull } from 'drizzle-orm'
 import { SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, maskSystemSettingsSecrets } from './secretMask'
 import { findSuperAdminOnlySettingFields, stripSuperAdminOnlySettingFields } from '~/utils/settingsPermissions'
 import { isValidAstrbotWeeklyConfigInput, normalizeAstrbotWeeklyConfig } from '~~/server/utils/astrbot-weekly-config'
@@ -31,6 +31,7 @@ import {
 import { parseThemeArray, validateThemeConfig } from '~~/server/utils/theme-config'
 import { fetchGradeClassOptions } from '~~/server/utils/grade-class-options'
 import { normalizeAstrbotBaseUrl } from '~~/server/utils/astrbot-notification'
+import { isAstrbotBindingConfigChange } from '~~/server/utils/astrbot-bind-ticket'
 import {
   ASTRBOT_GROUP_EVENT_KEYS,
   normalizeAstrbotGroupEvents,
@@ -1517,12 +1518,24 @@ export default defineEventHandler(async (event) => {
       settings = newSettingsResult[0]
     } else {
       // 如果存在，更新设置
-      const updatedSettingsResult = await db
-        .update(systemSettings)
-        .set(updateData)
-        .where(eq(systemSettings.id, settings.id))
-        .returning()
-      settings = updatedSettingsResult[0]
+      const id = settings.id
+      if (['astrbotToken', 'astrbotEnabled', 'astrbotPlatforms'].some((field) => Object.hasOwn(updateData, field))) {
+        settings = await db.transaction(async (tx) => {
+          const [before] = await tx.select().from(systemSettings).where(eq(systemSettings.id, id)).for('update')
+          const [after] = await tx.update(systemSettings).set(updateData).where(eq(systemSettings.id, id)).returning()
+          if (before && after && isAstrbotBindingConfigChange(before, after)) {
+            await tx.delete(astrbotBindTickets)
+            await tx.update(astrbotBindings).set({ passwordResetGrantId: null })
+              .where(isNotNull(astrbotBindings.passwordResetGrantId))
+          }
+          return after
+        })
+      } else {
+        ;[settings] = await db.update(systemSettings).set(updateData).where(eq(systemSettings.id, id)).returning()
+      }
+    }
+    if (!settings) {
+      throw createApiError(409, SERVER_ERROR_CODES.COMMON_TARGET_NOT_FOUND, '系统配置已变更，请刷新后重试')
     }
 
     if (updateData.telemetryEnabled !== undefined) {

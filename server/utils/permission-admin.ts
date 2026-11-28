@@ -58,13 +58,17 @@ export type PermissionTransaction = Pick<
   'select' | 'update' | 'insert' | 'delete' | 'execute'
 >
 
+export async function lockPermissionChanges(tx: Pick<PermissionTransaction, 'execute'>) {
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(19830, 1)`)
+}
+
 // 所有权限与账号变更共用事务锁；锁内刷新操作者，防止等待期间撤权后继续写入。
 export async function withPermissionTransaction<T>(
   event: H3Event,
   callback: (tx: PermissionTransaction, templates: Record<string, unknown>) => Promise<T>
 ): Promise<T> {
   return db.transaction(async (tx) => {
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(19830, 1)`)
+    await lockPermissionChanges(tx)
     const templates = await getRolePermissionTemplatesCached(tx)
     const [operator] = await tx
       .select({

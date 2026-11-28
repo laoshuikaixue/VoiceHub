@@ -116,15 +116,27 @@ function settingsRuntime() {
     apiLogLevel: 'all', apiLogRetentionDays: 90, auditLogRetentionDays: 180
   }
   let writes = 0
+  let invalidations = 0
+  let recoveryRevocations = 0
   const audits: Array<{ action: string; options: any }> = []
   const db = {
-    select: () => ({ from: () => ({ limit: async () => [{ ...settings }] }) }),
-    update: () => ({ set: (patch: any) => ({ where: () => ({ returning: async () => {
+    transaction: async (work: (tx: any) => Promise<unknown>) => work(db),
+    select: () => ({ from: () => ({
+      limit: async () => [{ ...settings }],
+      where: () => ({ for: async () => [{ ...settings }] })
+    }) }),
+    delete: async (table: string) => { assert.equal(table, 'tickets'); invalidations++ },
+    update: (table: any) => ({ set: (patch: any) => ({ where: () => table === 'bindings'
+      ? (assert.deepEqual(patch, { passwordResetGrantId: null }), recoveryRevocations++, Promise.resolve())
+      : ({ returning: async () => {
       settings = { ...settings, ...patch }; writes++; return [{ ...settings }]
     } }) }) })
   }
   const deps = {
     ...permissions, ...scopes, db, systemSettings: { id: 'id' },
+    astrbotBindTickets: 'tickets', astrbotBindings: 'bindings', isNotNull: () => null,
+    isAstrbotBindingConfigChange: (before: any, after: any) =>
+      ['astrbotToken', 'astrbotEnabled', 'astrbotPlatforms'].some(key => before[key] !== after[key]),
     eq: () => null, defineEventHandler: (fn: any) => fn, readBody: async (event: any) => event.body,
     getMethod: (event: any) => event.method, getRouterParam: (event: any) => event.scope,
     createApiError, createError, SERVER_ERROR_CODES, maskSystemSettingsSecrets, SMTP_PASSWORD_MASK, SECRET_FIELD_MASK, parseEsaCaptchaScenes,
@@ -138,8 +150,20 @@ function settingsRuntime() {
   const writeSettings = handler('server/api/admin/system-settings/index.post.ts', deps)
   const scoped = handler('server/api/admin/system-settings/[scope].ts', { ...deps, readSettings, writeSettings })
   const call = (scope: string, method: string, codes: string[], body?: any) => scoped({ scope, method, body, context: { user: { perms: role(...codes) } } })
-  return { call, settings: () => settings, writes: () => writes, audits: () => audits }
+  return { call, settings: () => settings, writes: () => writes, audits: () => audits,
+    invalidations: () => invalidations, recoveryRevocations: () => recoveryRevocations }
 }
+
+test('机器人配置提交仅在绑定相关值变动时作废旧票据', async () => {
+  const runtime = settingsRuntime()
+  await runtime.call('astrbot', 'POST', ['astrbot:write'], { astrbotToken: SECRET_FIELD_MASK })
+  assert.equal(runtime.invalidations(), 0)
+  assert.equal(runtime.recoveryRevocations(), 0)
+  await runtime.call('astrbot', 'POST', ['astrbot:write'], { astrbotToken: 'next-token' })
+  await runtime.call('astrbot', 'POST', ['astrbot:write'], { astrbotToken: 'bot-secret' })
+  assert.equal(runtime.invalidations(), 2)
+  assert.equal(runtime.recoveryRevocations(), 2)
+})
 
 test('实际模块配置处理器读取和保存均裁剪字段，掩码不能回写成真实密码', async () => {
   const runtime = settingsRuntime()

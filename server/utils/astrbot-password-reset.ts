@@ -1,96 +1,82 @@
-import { randomBytes } from 'node:crypto'
+import bcrypt from 'bcryptjs'
+import otplib from 'otplib'
+import type { H3Event } from 'h3'
+import { and, eq } from 'drizzle-orm'
+import { db } from '~/drizzle/db'
+import { userIdentities, users } from '~/drizzle/schema'
+import { hasPermission, PRIV_ADMIN_CONSOLE, resolveEffectivePermissions } from '~/utils/admin-permissions'
+import { SERVER_ERROR_CODES } from '~~/server/config/constants'
+import {
+  consumePasswordRateLimit,
+  PASSWORD_AUDIT_ACTIONS,
+  recordPasswordAudit
+} from '~~/server/services/passwordSecurityService'
+import { createApiError } from './apiError'
+import { getClientIP } from './ip-utils'
 import { seal, unseal } from './music-source-plugins/tickets'
-import { getServerTimestamp } from './serverTime'
+import { getRolePermissionTemplatesCached } from './system-settings-helper'
 
-/**
- * 机器人重置密码的两步确认凭据（无状态密封令牌）。
- *
- * 第一步 `/广播 重置密码 <新密码>` 签发 pendingToken；第二步
- * `/广播 重置密码 确认 <新密码>` 原样回传令牌消费。令牌用 JWT_SECRET 密封并内嵌
- * 过期时间，可跨请求、跨实例、Serverless 验证；新密码以密文随令牌携带，
- * 服务端不落库、不缓存明文。
- * 消费按 jti 记录为一次性，防「确认」步骤被重放；多副本部署下 TTL 内的重放至多
- * 再次写入同一新密码，无额外效果。最终写入仍走 updateUserPassword 的完整审计链。
- */
+const { authenticator } = otplib
+const PURPOSE = 'astrbot-granted-password-reset'
+export const ASTRBOT_PASSWORD_RESET_TTL_SECONDS = 300
 
-export const PASSWORD_RESET_PENDING_TTL_SECONDS = 5 * 60
-const PASSWORD_RESET_TICKET_PURPOSE = 'astrbot-password-reset-v1'
+type RecoveryAccount = Pick<typeof users.$inferSelect, 'role' | 'permissions' | 'status' | 'forcePasswordChange'>
+type IdentityReader = Pick<typeof db, 'select'>
 
-export interface PendingPasswordReset {
-  jti: string
-  umo: string
-  userId: number
-  password: string
-  createdAt: number
+export function loadAstrbotRecoveryTotp(executor: IdentityReader, userId: number, lock = false) {
+  const query = executor.select({ secret: userIdentities.providerUserId }).from(userIdentities)
+    .where(and(eq(userIdentities.userId, userId), eq(userIdentities.provider, 'totp'))).limit(1)
+  return lock ? query.for('share') : query
 }
 
-export interface CreatedPendingPasswordReset extends PendingPasswordReset {
-  pendingToken: string
-  expiresInSeconds: number
+export function canUseAstrbotPasswordReset(account: RecoveryAccount, templates: Record<string, unknown>) {
+  return account.status === 'active' && !account.forcePasswordChange &&
+    !hasPermission(resolveEffectivePermissions(account, templates), PRIV_ADMIN_CONSOLE)
 }
 
-interface PendingPasswordResetOptions {
-  ttlSeconds?: number
+export function astrbotPasswordResetDenied() {
+  return createApiError(403, SERVER_ERROR_CODES.ASTRBOT_PASSWORD_RESET_NOT_ALLOWED,
+    '未授予机器人重置密码权限，请使用 VoiceHub 网页的忘记密码')
 }
 
-// 已消费 jti 集合：创建新令牌时惰性清扫过期项，避免长期运行无界增长
-const consumedJtis = new Map<string, number>()
-
-function sweepConsumed(now: number): void {
-  for (const [jti, expiresAt] of consumedJtis) {
-    if (expiresAt <= now) consumedJtis.delete(jti)
+export async function verifyAstrbotPasswordResetConsent(event: H3Event, password: unknown, code: unknown) {
+  const user = event.context.user
+  if (hasPermission(user.perms ?? [], PRIV_ADMIN_CONSOLE)) throw astrbotPasswordResetDenied()
+  const action = PASSWORD_AUDIT_ACTIONS.STEP_UP
+  const result = await consumePasswordRateLimit(user.id, getClientIP(event), action, 5)
+  if (!result.allowed) {
+    throw createApiError(429, SERVER_ERROR_CODES.AUTH_RATE_LIMITED_SECONDS, '验证尝试次数过多',
+      { params: [result.retryAfterSeconds] })
   }
+
+  const [account] = await db.select().from(users).where(eq(users.id, user.id)).limit(1)
+  if (!account || account.tokenVersion !== user.tokenVersion ||
+    !canUseAstrbotPasswordReset(account, await getRolePermissionTemplatesCached())) {
+    throw astrbotPasswordResetDenied()
+  }
+  const [totp] = await loadAstrbotRecoveryTotp(db, user.id)
+  const validPassword = typeof password === 'string' && password.length > 0 && password.length <= 128 &&
+    !!account.password && await bcrypt.compare(password, account.password)
+  const valid = validPassword && (!totp ||
+    (typeof code === 'string' && /^[0-9]{6}$/.test(code) && authenticator.check(code, totp.secret)))
+  await recordPasswordAudit(event, user.id, action, !!valid, valid ? undefined : '机器人恢复授权凭据无效')
+  if (!valid) {
+    throw createApiError(400, SERVER_ERROR_CODES.AUTH_INVALID_CREDENTIALS, '当前账号验证失败')
+  }
+  return { passwordHash: account.password, totpSecret: totp?.secret }
 }
 
-export function createPendingPasswordReset(
-  value: Omit<PendingPasswordReset, 'jti' | 'createdAt'>,
-  options: PendingPasswordResetOptions = {}
-): CreatedPendingPasswordReset {
-  const ttl = options.ttlSeconds ?? PASSWORD_RESET_PENDING_TTL_SECONDS
-  const now = getServerTimestamp()
-  sweepConsumed(now)
+type ResetChallenge = { userId: number; umo: string; grantId: string; tokenVersion: number; botTokenHash: string; passwordHash: string }
 
-  const jti = randomBytes(24).toString('base64url')
-  const pendingToken = seal({ ...value, jti, createdAt: now }, PASSWORD_RESET_TICKET_PURPOSE, ttl * 1000)
-  return { ...value, jti, createdAt: now, pendingToken, expiresInSeconds: ttl }
+export function createAstrbotResetChallenge(value: ResetChallenge) {
+  return seal(value, PURPOSE, ASTRBOT_PASSWORD_RESET_TTL_SECONDS * 1000)
 }
 
-/**
- * 消费 pending 令牌：签名或过期校验失败、字段形状不符、或 jti 已被消费时返回 null。
- * 每次请求只消费一次；改密抛异常时该 jti 已被标记消费，攻击者无法重放，
- * 合法用户重试需重新走第一步。
- */
-export function consumePendingPasswordReset(
-  pendingToken: unknown,
-  options: PendingPasswordResetOptions = {}
-): PendingPasswordReset | null {
-  if (typeof pendingToken !== 'string' || !pendingToken) return null
-
-  let payload: PendingPasswordReset
+export function readAstrbotResetChallenge(token: unknown): ResetChallenge | null {
+  if (typeof token !== 'string' || token.length > 4096) return null
   try {
-    payload = unseal<PendingPasswordReset>(pendingToken, PASSWORD_RESET_TICKET_PURPOSE)
+    return unseal<ResetChallenge>(token, PURPOSE)
   } catch {
-    // unseal 对伪造/篡改/过期令牌抛 pluginError，消费侧统一以 null 表达拒绝
     return null
   }
-
-  if (
-    typeof payload?.jti !== 'string' || !payload.jti ||
-    typeof payload.umo !== 'string' || !payload.umo ||
-    typeof payload.userId !== 'number' || !Number.isInteger(payload.userId) ||
-    typeof payload.password !== 'string' || !payload.password ||
-    typeof payload.createdAt !== 'number'
-  ) return null
-
-  const now = getServerTimestamp()
-  sweepConsumed(now)
-  if (consumedJtis.has(payload.jti)) return null
-  const ttl = options.ttlSeconds ?? PASSWORD_RESET_PENDING_TTL_SECONDS
-  consumedJtis.set(payload.jti, now + ttl * 1000)
-  return payload
-}
-
-/** 当前已消费记录数（供测试观察惰性清扫行为）。 */
-export function consumedPasswordResetCount(): number {
-  return consumedJtis.size
 }
