@@ -332,9 +332,11 @@
             </div>
             <div class="flex flex-wrap items-center gap-3 shrink-0">
               <button
+                v-if="allowReplaceTitleArtist"
                 type="button"
                 :aria-pressed="replaceTitleArtist"
-                class="flex items-center gap-2 px-3 py-2.5 text-[11px] font-bold transition-all"
+                :disabled="applying"
+                class="flex items-center gap-2 px-3 py-2.5 text-[11px] font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 :class="
                   replaceTitleArtist
                     ? 'text-primary'
@@ -417,6 +419,10 @@ const props = defineProps({
   song: {
     type: Object,
     default: () => ({})
+  },
+  allowReplaceTitleArtist: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -831,8 +837,8 @@ const applySelection = async () => {
       cover: cover || '',
       durationSeconds: durationSeconds || null,
       selectionToken: isPluginPlatform(item.musicPlatform) ? item.selectionToken || '' : '',
-      title: replaceTitleArtist.value ? item.title : null,
-      artist: replaceTitleArtist.value ? item.artist : null
+      title: props.allowReplaceTitleArtist && replaceTitleArtist.value ? item.title : null,
+      artist: props.allowReplaceTitleArtist && replaceTitleArtist.value ? item.artist : null
     })
   } finally {
     applying.value = false

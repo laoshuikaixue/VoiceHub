@@ -1310,6 +1310,7 @@
     <SongSourceReplaceModal
       :show="showSourceReplaceModal"
       :song="sourceReplaceSong"
+      allow-replace-title-artist
       @close="showSourceReplaceModal = false"
       @apply="applySourceReplacement"
     />
